@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Waves } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
   { href: '/',        label: 'Home'    },
@@ -50,17 +51,13 @@ export default function Navbar() {
           className="flex items-center gap-2 group select-none"
           aria-label="Mula Bowls — home"
         >
-          <span
-            className={`p-1.5 rounded-xl transition-colors ${
-              isLight ? 'bg-brand-50' : 'bg-white/20'
-            }`}
-          >
-            <Waves
-              className={`w-5 h-5 transition-colors ${
-                isLight ? 'text-brand-600' : 'text-white'
-              }`}
-            />
-          </span>
+          <Image
+            src="/logo.jpg"
+            alt="Mula Bowls"
+            width={32}
+            height={32}
+            className="rounded-lg"
+          />
           <span
             className={`font-black text-xl tracking-tight transition-colors ${
               isLight ? 'text-brand-700' : 'text-white'

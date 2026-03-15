@@ -1,16 +1,24 @@
 import { cookies } from 'next/headers';
-import { getMenuItemsCollection, IMenuItem } from '@/models/MenuItem';
+import { unstable_cache } from 'next/cache';
+import { getMenuItemsCollection } from '@/models/MenuItem';
 import MenuPage from '@/components/MenuPage';
 import AdminMenuFAB from '@/components/AdminMenuFAB';
+import type { MenuItem } from '@/components/MenuPage';
 
 interface Props {
   searchParams: { table?: string };
 }
 
-async function getMenuItems(): Promise<IMenuItem[]> {
-  const collection = await getMenuItemsCollection();
-  return collection.find({ available: true }).toArray();
-}
+// Cached for 60 s — busted immediately when an admin mutates a menu item
+const getMenuItems = unstable_cache(
+  async (): Promise<MenuItem[]> => {
+    const collection = await getMenuItemsCollection();
+    const items = await collection.find({ available: true }).toArray();
+    return JSON.parse(JSON.stringify(items));
+  },
+  ['menu-items'],
+  { revalidate: 60, tags: ['menu-items'] },
+);
 
 export default async function MenuRoute({ searchParams }: Props) {
   const tableNumber  = searchParams.table ? parseInt(searchParams.table, 10) : null;
@@ -41,7 +49,7 @@ export default async function MenuRoute({ searchParams }: Props) {
 
       {/* ── Menu grid + cart (client component — handles TableModal) ── */}
       <MenuPage
-        items={JSON.parse(JSON.stringify(items))}
+        items={items}
         tableNumber={isValidTable ? tableNumber : null}
         isAdmin={isAdmin}
       />

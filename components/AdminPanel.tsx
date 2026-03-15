@@ -119,7 +119,10 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ available: !item.available }),
     });
-    if (res.ok) setItems((p) => p.map((i) => i._id === item._id ? { ...i, available: !i.available } : i));
+    if (res.ok) {
+      setItems((p) => p.map((i) => i._id === item._id ? { ...i, available: !i.available } : i));
+      router.refresh();
+    }
     setBusy(null);
   }
 
@@ -127,7 +130,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
     if (!confirm('Dit item definitief verwijderen?')) return;
     setBusy(id);
     const res = await fetch(`/api/menu-items/${id}`, { method: 'DELETE' });
-    if (res.ok) setItems((p) => p.filter((i) => i._id !== id));
+    if (res.ok) { setItems((p) => p.filter((i) => i._id !== id)); router.refresh(); }
     setBusy(null);
   }
 
@@ -144,6 +147,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
       setItems((p) => [created, ...p]);
       setAddForm(BLANK);
       setShowAdd(false);
+      router.refresh();
     }
     setBusy(null);
   }
@@ -161,6 +165,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
       const updated = await res.json();
       setItems((p) => p.map((i) => i._id === editId ? updated : i));
       setEditId(null);
+      router.refresh();
     }
     setBusy(null);
   }

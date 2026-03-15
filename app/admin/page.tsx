@@ -1,17 +1,29 @@
+import { unstable_cache } from 'next/cache';
 import { getMenuItemsCollection } from '@/models/MenuItem';
 import { getOrdersCollection } from '@/models/Order';
 import AdminPanel from '@/components/AdminPanel';
 
+// Share the same cache tag as the menu page — busted on every admin mutation
+const getAllMenuItems = unstable_cache(
+  async () => {
+    const col   = await getMenuItemsCollection();
+    const items = await col.find({}).toArray();
+    return JSON.parse(JSON.stringify(items));
+  },
+  ['admin-menu-items'],
+  { revalidate: 10, tags: ['menu-items'] },
+);
+
 export default async function AdminPage() {
-  const [itemsCol, ordersCol] = await Promise.all([
-    getMenuItemsCollection(),
+  const [items, ordersCol] = await Promise.all([
+    getAllMenuItems(),
     getOrdersCollection(),
   ]);
 
-  const [items, orders] = await Promise.all([
-    itemsCol.find({}).toArray(),
-    ordersCol.find({}).sort({ createdAt: -1 }).toArray(),
-  ]);
+  // Orders stay fresh — they change constantly as customers order
+  const orders = JSON.parse(JSON.stringify(
+    await ordersCol.find({}).sort({ createdAt: -1 }).toArray()
+  ));
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -27,8 +39,8 @@ export default async function AdminPage() {
       </header>
 
       <AdminPanel
-        initialItems={JSON.parse(JSON.stringify(items))}
-        initialOrders={JSON.parse(JSON.stringify(orders))}
+        initialItems={items}
+        initialOrders={orders}
       />
     </main>
   );

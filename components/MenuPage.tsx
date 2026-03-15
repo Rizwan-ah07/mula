@@ -56,9 +56,10 @@ const LS_KEY = 'mulaTableNumber';
 interface Props {
   items:       MenuItem[];
   tableNumber: number | null;
+  isAdmin?:    boolean;
 }
 
-export default function MenuPage({ items, tableNumber }: Props) {
+export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
   const [cart,           setCart]           = useState<CartItem[]>([]);
   const [activeTab,      setTab]            = useState<Tab>('all');
   const [cartOpen,       setCartOpen]       = useState(false);
@@ -222,6 +223,7 @@ export default function MenuPage({ items, tableNumber }: Props) {
                           : item._id;
                         changeQty(key, -1);
                       }}
+                      isAdmin={isAdmin}
                     />
                   );
                 })}

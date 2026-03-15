@@ -137,6 +137,13 @@ export default function HomePage() {
       <footer className="bg-slate-900 text-slate-400 py-8 px-4 text-center text-sm">
         <p className="font-semibold text-white mb-1">Mula Bowls</p>
         <p>© {new Date().getFullYear()} · Fresh Poke &amp; Puree Bowls</p>
+        <a
+          href="/admin/login"
+          className="inline-block mt-4 text-slate-700 hover:text-slate-500 transition-colors"
+          aria-label="Admin toegang"
+        >
+          🔒
+        </a>
       </footer>
     </main>
   );

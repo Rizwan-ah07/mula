@@ -1,5 +1,7 @@
+import { cookies } from 'next/headers';
 import { getMenuItemsCollection, IMenuItem } from '@/models/MenuItem';
 import MenuPage from '@/components/MenuPage';
+import AdminMenuFAB from '@/components/AdminMenuFAB';
 
 interface Props {
   searchParams: { table?: string };
@@ -14,7 +16,8 @@ export default async function MenuRoute({ searchParams }: Props) {
   const tableNumber  = searchParams.table ? parseInt(searchParams.table, 10) : null;
   const isValidTable = tableNumber !== null && !isNaN(tableNumber) && tableNumber > 0;
 
-  const items = await getMenuItems();
+  const items   = await getMenuItems();
+  const isAdmin = cookies().get('admin_auth')?.value === process.env.ADMIN_PASSWORD;
 
   return (
     <main className="min-h-screen">
@@ -40,7 +43,11 @@ export default async function MenuRoute({ searchParams }: Props) {
       <MenuPage
         items={JSON.parse(JSON.stringify(items))}
         tableNumber={isValidTable ? tableNumber : null}
+        isAdmin={isAdmin}
       />
+
+      {/* ── Admin quick-add FAB (only visible when logged in as admin) ── */}
+      {isAdmin && <AdminMenuFAB />}
     </main>
   );
 }

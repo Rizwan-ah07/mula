@@ -1,8 +1,8 @@
 // GET /api/seed  — seeds demo menu items (dev only)
 import { NextResponse } from 'next/server';
-import { getMenuItemsCollection } from '@/models/MenuItem';
+import { getMenuItemsCollection, IMenuItem } from '@/models/MenuItem';
 
-const SEED_ITEMS = [
+const SEED_ITEMS: Omit<IMenuItem, '_id' | 'available' | 'createdAt' | 'updatedAt'>[] = [
   // ── Poke Bowls ─────────────────────────────────────────────────────────────
   {
     name: 'Classic Ahi Poke',
@@ -29,22 +29,6 @@ const SEED_ITEMS = [
     ingredients: ['Tempura Shrimp', 'Mango', 'Coconut Rice', 'Lime'],
   },
   // ── Puree Bowls ────────────────────────────────────────────────────────────
-  {
-    name: 'Silky Avocado Puree',
-    price: 11.0,
-    description: 'Whipped avocado, lime zest, plant-based protein crumbles.',
-    category: 'puree',
-    image: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600',
-    ingredients: ['Avocado', 'Lime', 'Plant Protein', 'Sea Salt'],
-  },
-  {
-    name: 'Sweet Potato Puree Bowl',
-    price: 10.5,
-    description: 'Roasted sweet potato, coconut cream, ginger, pecans.',
-    category: 'puree',
-    image: 'https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?w=600',
-    ingredients: ['Sweet Potato', 'Coconut Cream', 'Ginger', 'Pecans'],
-  },
   {
     name: 'Crispy Tender Bowl',
     price: 11.0,

@@ -5,6 +5,8 @@ import MenuCard from './MenuCard';
 import Cart from './Cart';
 import TableModal from './TableModal';
 import BowlBuilder, { type BowlCartItem } from './BowlBuilder';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { t } from '@/locales/translations';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -17,7 +19,7 @@ export interface MenuItem {
   _id: string;
   name: string;
   price: number;
-  description: string;
+  description: { nl: string; en: string; fr: string };
   category: 'poke' | 'puree' | 'sides' | 'drinks';
   image: string;
   ingredients: string[];
@@ -40,15 +42,6 @@ export interface CartItem {
 
 type Tab = 'all' | 'poke' | 'puree' | 'sides' | 'drinks' | 'build';
 
-const TABS: { label: string; value: Tab }[] = [
-  { label: '🍱 All',    value: 'all'    },
-  { label: '🐟 Poke',   value: 'poke'   },
-  { label: '🥣 Puree',  value: 'puree'  },
-  { label: '🥦 Sides',  value: 'sides'  },
-  { label: '🥤 Drinks', value: 'drinks' },
-  { label: '✨ Custom', value: 'build'  },
-];
-
 const LS_KEY = 'mulaTableNumber';
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -60,11 +53,21 @@ interface Props {
 }
 
 export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
+  const { language } = useLanguage();
   const [cart,           setCart]           = useState<CartItem[]>([]);
   const [activeTab,      setTab]            = useState<Tab>('all');
   const [cartOpen,       setCartOpen]       = useState(false);
   const [effectiveTable, setEffectiveTable] = useState<number | null>(tableNumber);
   const [showModal,      setShowModal]      = useState(false);
+
+  const TABS: { label: string; value: Tab }[] = [
+    { label: t('tabs.custom', language), value: 'build'  },
+    { label: t('tabs.all', language),    value: 'all'    },
+    { label: t('tabs.poke', language),   value: 'poke'   },
+    { label: t('tabs.puree', language),  value: 'puree'  },
+    { label: t('tabs.sides', language),  value: 'sides'  },
+    { label: t('tabs.drinks', language), value: 'drinks' },
+  ];
 
   useEffect(() => {
     if (tableNumber && tableNumber > 0) {
@@ -180,13 +183,13 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
           <>
             <h2 className="text-xl font-bold text-slate-700 mb-3 capitalize">
               {activeTab === 'all'
-                ? 'Volledig Menu'
+                ? t('menu.fullMenu', language)
                 : TABS.find((t) => t.value === activeTab)?.label ?? activeTab}
             </h2>
 
             {filtered.length === 0 ? (
               <p className="text-center text-slate-400 py-16">
-                Geen items beschikbaar.
+                {t('menu.noItems', language)}
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -242,7 +245,7 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
             <span className="bg-white/30 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
               {cartCount}
             </span>
-            Bestelling · €{cartTotal.toFixed(2)}
+            {t('menu.order', language)} · €{cartTotal.toFixed(2)}
           </button>
         )}
 

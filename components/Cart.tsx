@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { X, Minus, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { submitOrder } from '@/actions/orders';
 import type { CartItem } from './MenuPage';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { t } from '@/locales/translations';
 
 interface Props {
   cart:          CartItem[];
@@ -17,6 +19,7 @@ interface Props {
 export default function Cart({
   cart, tableNumber, onClose, onChangeQty, onRemove, onOrderPlaced,
 }: Props) {
+  const { language } = useLanguage();
   const [notes,   setNotes]   = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -67,7 +70,7 @@ export default function Cart({
         </div>
 
         <div className="flex items-center justify-between px-5 pb-3">
-          <h2 className="text-xl font-bold">Uw bestelling</h2>
+          <h2 className="text-xl font-bold">{t('cart.title', language)}</h2>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-100">
             <X className="w-5 h-5" />
           </button>
@@ -76,9 +79,9 @@ export default function Cart({
         {success ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 py-12 px-6 text-center">
             <CheckCircle2 className="w-16 h-16 text-brand-500" />
-            <h3 className="text-2xl font-bold text-brand-700">Bestelling geplaatst!</h3>
+            <h3 className="text-2xl font-bold text-brand-700">{t('cart.orderPlaced', language)}</h3>
             <p className="text-slate-500">
-              Tafel {tableNumber} — uw bestelling gaat naar de keuken. 🍣
+              {t('cart.table', language)} {tableNumber} — {t('cart.orderSuccess', language)}
             </p>
           </div>
         ) : (
@@ -103,7 +106,7 @@ export default function Cart({
                           {item.itemNotes}
                         </p>
                       )}
-                      <p className="text-slate-400 text-xs mt-0.5">€{item.price.toFixed(2)} per stuk</p>
+                      <p className="text-slate-400 text-xs mt-0.5">€{item.price.toFixed(2)} {t('cart.perItem', language)}</p>
                     </div>
 
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -134,12 +137,12 @@ export default function Cart({
               {/* Notes */}
               <div className="pt-2 pb-4">
                 <label className="text-sm font-medium text-slate-700 block mb-1">
-                  Speciale instructies
+                  {t('cart.specialInstructions', language)}
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Allergieën, extra saus, geen uien..."
+                  placeholder={t('cart.instructionsPlaceholder', language)}
                   rows={2}
                   className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm
                              resize-none focus:outline-none focus:ring-2 focus:ring-brand-400"
@@ -150,7 +153,7 @@ export default function Cart({
             {/* Footer */}
             <div className="px-5 pt-3 pb-6 border-t border-slate-100">
               <div className="flex justify-between text-lg font-bold mb-3">
-                <span>Totaal</span>
+                <span>{t('cart.total', language)}</span>
                 <span>€{total.toFixed(2)}</span>
               </div>
 
@@ -158,7 +161,7 @@ export default function Cart({
                 <div className="flex items-center gap-2 text-amber-600 text-sm mb-3
                                 bg-amber-50 rounded-xl px-3 py-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  Scan de QR-code aan uw tafel om te bestellen.
+                  {t('cart.scanQR', language)}
                 </div>
               )}
 
@@ -170,8 +173,8 @@ export default function Cart({
                 className="btn-primary w-full text-base py-3"
               >
                 {loading
-                  ? 'Bestelling plaatsen…'
-                  : `Bestelling plaatsen · Tafel ${tableNumber ?? '—'}`}
+                  ? t('cart.placing', language)
+                  : `${t('cart.placeOrderWithTable', language)} ${tableNumber ?? '—'}`}
               </button>
             </div>
           </>

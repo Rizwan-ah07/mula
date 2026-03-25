@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { MapPin, AlertCircle } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { t } from '@/locales/translations';
 
 interface Props {
   onConfirm: (tableNumber: number) => void;
@@ -12,6 +14,7 @@ interface Props {
  * Cannot be closed by pressing Escape or clicking outside.
  */
 export default function TableModal({ onConfirm }: Props) {
+  const { language } = useLanguage();
   const [value,  setValue]  = useState('');
   const [error,  setError]  = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -34,7 +37,7 @@ export default function TableModal({ onConfirm }: Props) {
     e.preventDefault();
     const num = parseInt(value.trim(), 10);
     if (!value.trim() || isNaN(num) || num <= 0 || num > 999) {
-      setError('Please enter a valid table number (1 – 999).');
+      setError(t('table.error', language));
       inputRef.current?.focus();
       return;
     }
@@ -66,10 +69,10 @@ export default function TableModal({ onConfirm }: Props) {
               id="table-modal-title"
               className="text-2xl font-black text-slate-800"
             >
-              What's your table?
+              {t('table.title', language)}
             </h2>
             <p className="text-slate-500 text-sm mt-1 leading-relaxed">
-              Enter the number shown on your table to start ordering.
+              {t('table.subtitle', language)}
             </p>
           </div>
 
@@ -79,7 +82,7 @@ export default function TableModal({ onConfirm }: Props) {
               htmlFor="table-input"
               className="block text-sm font-semibold text-slate-700 mb-1.5"
             >
-              Table Number
+              {t('table.label', language)}
             </label>
             <input
               id="table-input"
@@ -89,7 +92,7 @@ export default function TableModal({ onConfirm }: Props) {
               max={999}
               value={value}
               onChange={(e) => { setValue(e.target.value); setError(''); }}
-              placeholder="e.g. 5"
+              placeholder={t('table.placeholder', language)}
               className={`w-full border-2 rounded-xl px-4 py-3 text-xl font-bold text-center
                           text-slate-800 focus:outline-none transition-colors ${
                             error
@@ -111,12 +114,12 @@ export default function TableModal({ onConfirm }: Props) {
               className="mt-5 w-full bg-brand-600 hover:bg-brand-700 active:scale-95
                          text-white font-bold py-3.5 rounded-xl text-base transition-all"
             >
-              Confirm Table
+              {t('table.confirm', language)}
             </button>
           </form>
 
           <p className="text-center text-slate-400 text-xs mt-4">
-            Can't find your table number? Ask a team member for help.
+            {t('table.helpText', language)}
           </p>
         </div>
       </div>

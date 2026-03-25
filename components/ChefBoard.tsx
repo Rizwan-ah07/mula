@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import Pusher from 'pusher-js';
 import OrderCard from './OrderCard';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { t } from '@/locales/translations';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { t } from '@/locales/translations';
 
 export interface OrderItem {
   menuItemId: string;
@@ -32,6 +36,7 @@ const E_NEW   = 'new-order';
 const E_UPD   = 'order-updated';
 
 export default function ChefBoard({ initialOrders }: Props) {
+  const { language } = useLanguage();
   const [orders, setOrders] = useState<Order[]>(initialOrders);
 
   useEffect(() => {
@@ -82,8 +87,8 @@ export default function ChefBoard({ initialOrders }: Props) {
       {orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-32 text-slate-500 gap-3">
           <span className="text-6xl">🌴</span>
-          <p className="text-xl font-semibold">All clear — no active orders</p>
-          <p className="text-sm">New orders will appear here in real-time.</p>
+          <p className="text-xl font-semibold">{t('kitchen.allClear', language)}</p>
+          <p className="text-sm">{t('kitchen.newOrders', language)}</p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -93,7 +98,7 @@ export default function ChefBoard({ initialOrders }: Props) {
               <div className="flex items-center gap-2 mb-3">
                 <span className="inline-block w-3 h-3 rounded-full bg-amber-400" />
                 <h2 className="text-amber-300 font-semibold uppercase tracking-wider text-sm">
-                  Pending ({pending.length})
+                  {t('kitchen.pending', language)} ({pending.length})
                 </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -114,7 +119,7 @@ export default function ChefBoard({ initialOrders }: Props) {
               <div className="flex items-center gap-2 mb-3">
                 <span className="inline-block w-3 h-3 rounded-full bg-ocean-400 animate-pulse" />
                 <h2 className="text-ocean-300 font-semibold uppercase tracking-wider text-sm">
-                  Preparing ({preparing.length})
+                  {t('kitchen.preparing', language)} ({preparing.length})
                 </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

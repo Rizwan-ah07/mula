@@ -1,25 +1,30 @@
+'use client';
+
 import Link from 'next/link';
 import { ChevronDown, Leaf, Clock, Star } from 'lucide-react';
-
-const FEATURES = [
-  {
-    icon: <Leaf className="w-6 h-6 text-brand-500" />,
-    title: 'Always Fresh',
-    body:  'Every ingredient is sourced daily and prepped right before your bowl is assembled.',
-  },
-  {
-    icon: <Clock className="w-6 h-6 text-coral-500" />,
-    title: 'Table-Side Ordering',
-    body:  'Scan the QR code, build your bowl, and it goes straight to the kitchen — no waiting in line.',
-  },
-  {
-    icon: <Star className="w-6 h-6 text-gold-500" />,
-    title: 'Customise Everything',
-    body:  'Pick your base, protein, toppings, and sauce. Your bowl, your way.',
-  },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
+import { t } from '@/locales/translations';
 
 export default function HomePage() {
+  const { language } = useLanguage();
+
+  const FEATURES = [
+    {
+      icon: <Leaf className="w-6 h-6 text-brand-500" />,
+      title: t('home.feature1Title', language),
+      body:  t('home.feature1Body', language),
+    },
+    {
+      icon: <Clock className="w-6 h-6 text-coral-500" />,
+      title: t('home.feature2Title', language),
+      body:  t('home.feature2Body', language),
+    },
+    {
+      icon: <Star className="w-6 h-6 text-gold-500" />,
+      title: t('home.feature3Title', language),
+      body:  t('home.feature3Body', language),
+    },
+  ];
   return (
     <main>
       {/* ── Hero ── */}
@@ -35,20 +40,19 @@ export default function HomePage() {
         <div className="relative z-10 text-center text-white px-4 max-w-3xl mx-auto pt-20">
           {/* Badge */}
           <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur border border-white/20 text-white/90 text-xs font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full mb-6">
-            🌊 Poke &amp; Puree Bowls
+            {t('home.badge', language)}
           </span>
 
           {/* Headline */}
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.05] mb-5">
-            Freshness in
+            {t('home.heroTitle1', language)}
             <br />
-            <span className="text-gold-400">Every Bowl</span>
+            <span className="text-gold-400">{t('home.heroTitle2', language)}</span>
           </h1>
 
           {/* Sub-headline */}
           <p className="text-lg sm:text-xl text-white/75 max-w-md mx-auto mb-10 leading-relaxed">
-            Handcrafted bowls built from scratch, delivered straight to your table
-            while you wait — fresh, fast, and full of flavour.
+            {t('home.heroSubtitle', language)}
           </p>
 
           {/* CTAs */}
@@ -59,7 +63,7 @@ export default function HomePage() {
                          active:scale-95 text-white font-bold px-8 py-4 rounded-2xl text-lg
                          shadow-lg shadow-coral-500/40 transition-all duration-150"
             >
-              Order Now 🍣
+              {t('home.orderNow', language)}
             </Link>
             <Link
               href="/menu"
@@ -67,7 +71,7 @@ export default function HomePage() {
                          backdrop-blur border border-white/25 text-white font-semibold
                          px-8 py-4 rounded-2xl text-lg transition-all duration-150"
             >
-              View Menu
+              {t('home.viewMenu', language)}
             </Link>
           </div>
         </div>
@@ -77,7 +81,7 @@ export default function HomePage() {
           href="#features"
           className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/50 hover:text-white/80
                      transition-colors animate-bounce"
-          aria-label="Scroll to features"
+          aria-label={t('home.scrollToFeatures', language)}
         >
           <ChevronDown className="w-6 h-6" />
         </a>
@@ -88,11 +92,10 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-black text-slate-800 mb-3">
-              Why Mula Bowls?
+              {t('home.featuresTitle', language)}
             </h2>
             <p className="text-slate-500 text-lg max-w-xl mx-auto">
-              We combine tropical ingredients with a frictionless digital ordering
-              experience built for modern dining.
+              {t('home.featuresSubtitle', language)}
             </p>
           </div>
 
@@ -118,10 +121,10 @@ export default function HomePage() {
       {/* ── CTA Banner ── */}
       <section className="bg-gradient-to-r from-brand-600 to-ocean-600 py-16 px-4 text-center">
         <h2 className="text-3xl sm:text-4xl font-black text-white mb-3">
-          Ready to build your bowl?
+          {t('home.ctaTitle', language)}
         </h2>
         <p className="text-white/75 mb-8 text-lg">
-          Scan the QR code at your table or browse the menu to start ordering.
+          {t('home.ctaSubtitle', language)}
         </p>
         <Link
           href="/menu"
@@ -129,14 +132,14 @@ export default function HomePage() {
                      text-white font-bold px-10 py-4 rounded-2xl text-lg
                      shadow-lg shadow-gold-500/40 transition-all duration-150"
         >
-          Browse the Menu →
+          {t('home.browseMenu', language)}
         </Link>
       </section>
 
       {/* ── Footer ── */}
       <footer className="bg-slate-900 text-slate-400 py-8 px-4 text-center text-sm">
         <p className="font-semibold text-white mb-1">Mula Bowls</p>
-        <p>© {new Date().getFullYear()} · Fresh Poke &amp; Puree Bowls</p>
+        <p>{t('home.footer', language).replace('{year}', String(new Date().getFullYear()))}</p>
         <a
           href="/admin/login"
           className="inline-block mt-4 text-slate-700 hover:text-slate-500 transition-colors"

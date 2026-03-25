@@ -4,18 +4,20 @@ import { useState } from 'react';
 import { Clock, CheckCheck, ChefHat } from 'lucide-react';
 import { updateOrderStatus } from '@/actions/orders';
 import type { Order } from './ChefBoard';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { t } from '@/locales/translations';
 
 interface Props {
   order:          Order;
   onStatusUpdate: (id: string, status: Order['status']) => void;
 }
 
-function elapsed(createdAt: string): string {
+function elapsed(createdAt: string, language: string): string {
   const secs = Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000);
-  if (secs < 60) return `${secs}s ago`;
+  if (secs < 60) return `${secs}s ${t('kitchen.ago', language as any)}`;
   const mins = Math.floor(secs / 60);
-  if (mins < 60) return `${mins}m ago`;
-  return `${Math.floor(mins / 60)}h ago`;
+  if (mins < 60) return `${mins}m ${t('kitchen.ago', language as any)}`;
+  return `${Math.floor(mins / 60)}h ${t('kitchen.ago', language as any)}`;
 }
 
 const STATUS_STYLES: Record<Order['status'], string> = {
@@ -25,6 +27,7 @@ const STATUS_STYLES: Record<Order['status'], string> = {
 };
 
 export default function OrderCard({ order, onStatusUpdate }: Props) {
+  const { language } = useLanguage();
   const [loading, setLoading] = useState(false);
 
   async function handleAction(newStatus: Order['status']) {
@@ -52,12 +55,12 @@ export default function OrderCard({ order, onStatusUpdate }: Props) {
           <span className="text-2xl font-black text-white">T{order.tableNumber}</span>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border capitalize
                             ${STATUS_STYLES[order.status]}`}>
-            {order.status}
+            {t(`kitchen.${order.status}`, language)}
           </span>
         </div>
         <div className="flex items-center gap-1 text-slate-400 text-xs">
           <Clock className="w-3 h-3" />
-          {elapsed(order.createdAt)}
+          {elapsed(order.createdAt, language)}
         </div>
       </div>
 
@@ -108,7 +111,7 @@ export default function OrderCard({ order, onStatusUpdate }: Props) {
                          disabled:opacity-50"
             >
               <ChefHat className="w-3.5 h-3.5" />
-              {loading ? '…' : 'Bereiden'}
+              {loading ? '…' : t('kitchen.startPreparing', language)}
             </button>
           )}
 
@@ -121,7 +124,7 @@ export default function OrderCard({ order, onStatusUpdate }: Props) {
                          disabled:opacity-50"
             >
               <CheckCheck className="w-3.5 h-3.5" />
-              {loading ? '…' : 'Klaar'}
+              {loading ? '…' : t('kitchen.markComplete', language)}
             </button>
           )}
         </div>

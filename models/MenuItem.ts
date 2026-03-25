@@ -12,7 +12,7 @@ export interface IMenuItem {
   _id?:        ObjectId;
   name:        string;
   price:       number;   // base / minimum price
-  description: string;
+  description: { nl: string; en: string; fr: string };
   category:    'poke' | 'puree' | 'sides' | 'drinks';
   image:       string;
   available:   boolean;

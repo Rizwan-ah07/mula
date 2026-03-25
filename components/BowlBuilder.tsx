@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Check, ShoppingBag, ArrowLeft, Plus, Minus, Pencil, BanIcon } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { t } from '@/locales/translations';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -86,19 +88,21 @@ function calcPrice(sel: Selections): number {
 
 // ── Step meta ─────────────────────────────────────────────────────────────────
 
-const STEPS = [
-  { n: 1, stap: 'STAP 1', title: 'Kies uw maat'     },
-  { n: 2, stap: 'STAP 2', title: 'Kies uw basis'    },
-  { n: 3, stap: 'STAP 3', title: 'Kies uw eiwitten' },
-  { n: 4, stap: 'STAP 4', title: 'Kies uw mix-ins'  },
-  { n: 5, stap: 'STAP 5', title: 'Kies uw dressing' },
-  { n: 6, stap: 'STAP 6', title: 'Kies uw toppings' },
-];
+function getSteps(language: string) {
+  return [
+    { n: 1, stap: t('builder.steps.step1', language as any), title: t('builder.steps.sizeTitle', language as any) },
+    { n: 2, stap: t('builder.steps.step2', language as any), title: t('builder.steps.baseTitle', language as any) },
+    { n: 3, stap: t('builder.steps.step3', language as any), title: t('builder.steps.proteinTitle', language as any) },
+    { n: 4, stap: t('builder.steps.step4', language as any), title: t('builder.steps.mixInsTitle', language as any) },
+    { n: 5, stap: t('builder.steps.step5', language as any), title: t('builder.steps.dressingTitle', language as any) },
+    { n: 6, stap: t('builder.steps.step6', language as any), title: t('builder.steps.toppingsTitle', language as any) },
+  ];
+}
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function SizeCard({ label, price, mixIns, selected, onClick }: {
-  label: string; price: number; mixIns: number; selected: boolean; onClick: () => void;
+function SizeCard({ label, price, mixIns, selected, onClick, language }: {
+  label: string; price: number; mixIns: number; selected: boolean; onClick: () => void; language: string;
 }) {
   return (
     <button
@@ -114,7 +118,7 @@ function SizeCard({ label, price, mixIns, selected, onClick }: {
         €{price.toFixed(2)}
       </span>
       <span className={`text-xs ${selected ? 'text-white/80' : 'text-slate-400'}`}>
-        {mixIns} mix-ins inbegrepen
+        {mixIns} {t('builder.steps.mixInsIncluded', language as any)}
       </span>
       {selected && <Check className="w-5 h-5 mt-1" />}
     </button>
@@ -190,6 +194,7 @@ function CounterChip({ label, count, onAdd, onRemove, isExtra }: {
 // ── BowlBuilder ───────────────────────────────────────────────────────────────
 
 export default function BowlBuilder({ onAddToCart, onBack }: Props) {
+  const { language } = useLanguage();
   const [step, setStep] = useState<number>(1);
   const [sel, setSel] = useState<Selections>({
     size: null, base: null, protein: null,
@@ -197,6 +202,8 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
     dressing: null,
     toppings: {}, toppingsDone: false,
   });
+
+  const STEPS = getSteps(language);
 
   const mixInLimit    = sel.size === 'Large' ? 5 : 4;
   const totalMixIns   = sumMap(sel.mixIns);
@@ -264,7 +271,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-brand-700 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Terug naar menu
+          {t('builder.backToMenu', language)}
         </button>
       </div>
 
@@ -273,9 +280,9 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
         <div className="flex items-center gap-3 mb-3">
           <span className="text-3xl">🥣</span>
           <div>
-            <h2 className="text-2xl font-black text-slate-800">Bouw uw eigen Pokebowl</h2>
+            <h2 className="text-2xl font-black text-slate-800">{t('builder.title', language)}</h2>
             <p className="text-sm text-slate-500">
-              {isSummary ? 'Overzicht van uw keuzes' : `${currentMeta?.stap} · ${currentMeta?.title}`}
+              {isSummary ? t('builder.summaryTitle', language) : `${currentMeta?.stap} · ${currentMeta?.title}`}
             </p>
           </div>
         </div>
@@ -287,7 +294,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
           />
         </div>
         <div className="flex justify-between mt-1 text-xs text-slate-400">
-          <span>{isSummary ? 'Klaar!' : `Stap ${step} van 6`}</span>
+          <span>{isSummary ? t('builder.done', language) : `${t('builder.step', language)} ${step} ${t('builder.of', language)} 6`}</span>
           <span className={extraMixIns > 0 || extraToppings > 0 ? 'text-coral-600 font-semibold' : ''}>
             {priceLabel}
           </span>
@@ -299,13 +306,13 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
       {step === 1 && (
         <div>
           <p className="text-sm text-slate-500 mb-4">
-            Medium (4 mix-ins) of Large (5 mix-ins) — extra mix-ins / toppings kosten €1 per stuk
+            {t('builder.steps.sizeDesc', language)}
           </p>
           <div className="grid grid-cols-2 gap-4">
             <SizeCard label="Medium" price={11.0} mixIns={4} selected={sel.size === 'Medium'}
-              onClick={() => setSel((p) => ({ ...p, size: 'Medium' }))} />
+              onClick={() => setSel((p) => ({ ...p, size: 'Medium' }))} language={language} />
             <SizeCard label="Large"  price={13.5} mixIns={5} selected={sel.size === 'Large'}
-              onClick={() => setSel((p) => ({ ...p, size: 'Large' }))} />
+              onClick={() => setSel((p) => ({ ...p, size: 'Large' }))} language={language} />
           </div>
         </div>
       )}
@@ -314,7 +321,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
 
       {step === 2 && (
         <div>
-          <p className="text-sm text-slate-500 mb-4">Kies de basis voor uw bowl</p>
+          <p className="text-sm text-slate-500 mb-4">{t('builder.steps.baseDesc', language)}</p>
           <div className="grid grid-cols-2 gap-2.5">
             {BASES.map((b) => (
               <Chip key={b} label={b} selected={sel.base === b}
@@ -328,7 +335,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
 
       {step === 3 && (
         <div>
-          <p className="text-sm text-slate-500 mb-4">Kies uw eiwitbron</p>
+          <p className="text-sm text-slate-500 mb-4">{t('builder.steps.proteinDesc', language)}</p>
           <div className="grid grid-cols-2 gap-2.5">
             {PROTEINS.map((pr) => (
               <Chip key={pr} label={pr} selected={sel.protein === pr}
@@ -345,8 +352,8 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
           {/* Counter header */}
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-slate-500">
-              Kies mix-ins
-              <span className="text-xs text-slate-400 ml-1">(extra = +€1 per stuk)</span>
+              {t('builder.steps.mixInsDesc', language)}
+              <span className="text-xs text-slate-400 ml-1">({t('builder.steps.extraCost', language)})</span>
             </p>
             <span className={`text-sm font-bold px-3 py-0.5 rounded-full transition-colors ${
               totalMixIns > mixInLimit
@@ -386,7 +393,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
               }`}
             >
               <BanIcon className="w-4 h-4" />
-              {sel.mixInsDone ? '✓ Niets meer — annuleer' : 'Niets meer voor mij'}
+              {sel.mixInsDone ? t('builder.steps.noMoreCancel', language) : t('builder.steps.noMore', language)}
             </button>
           )}
         </div>
@@ -396,7 +403,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
 
       {step === 5 && (
         <div>
-          <p className="text-sm text-slate-500 mb-4">Kies 1 dressing</p>
+          <p className="text-sm text-slate-500 mb-4">{t('builder.steps.dressingDesc', language)}</p>
           <div className="grid grid-cols-2 gap-2.5">
             {DRESSINGS.map((d) => (
               <Chip key={d} label={d} selected={sel.dressing === d}
@@ -412,8 +419,8 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-slate-500">
-              Kies toppings
-              <span className="text-xs text-slate-400 ml-1">(extra na 3 = +€1 per stuk)</span>
+              {t('builder.steps.toppingsDesc', language)}
+              <span className="text-xs text-slate-400 ml-1">({t('builder.steps.toppingsExtra', language)})</span>
             </p>
             <span className={`text-sm font-bold px-3 py-0.5 rounded-full transition-colors ${
               totalToppings > 3
@@ -453,7 +460,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
               }`}
             >
               <BanIcon className="w-4 h-4" />
-              {sel.toppingsDone ? '✓ Niets meer — annuleer' : 'Niets meer voor mij'}
+              {sel.toppingsDone ? t('builder.steps.noMoreCancel', language) : t('builder.steps.noMore', language)}
             </button>
           )}
         </div>
@@ -466,25 +473,25 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
           {/* Price breakdown */}
           {(extraMixIns > 0 || extraToppings > 0) && (
             <div className="bg-coral-50 border border-coral-200 rounded-2xl px-4 py-3 space-y-1">
-              <p className="text-sm font-bold text-coral-700">Prijsoverzicht</p>
+              <p className="text-sm font-bold text-coral-700">{t('builder.summary.priceBreakdown', language)}</p>
               <div className="flex justify-between text-sm text-coral-700">
-                <span>Basisbowl ({sel.size})</span>
+                <span>{t('builder.summary.baseBowl', language)} ({sel.size})</span>
                 <span>€{(sel.size === 'Large' ? 13.5 : 11.0).toFixed(2)}</span>
               </div>
               {extraMixIns > 0 && (
                 <div className="flex justify-between text-sm text-coral-700">
-                  <span>{extraMixIns} extra mix-in{extraMixIns > 1 ? 's' : ''}</span>
+                  <span>{extraMixIns} {extraMixIns === 1 ? t('builder.summary.extraMixIn', language) : t('builder.summary.extraMixIns', language)}</span>
                   <span>+€{extraMixIns.toFixed(2)}</span>
                 </div>
               )}
               {extraToppings > 0 && (
                 <div className="flex justify-between text-sm text-coral-700">
-                  <span>{extraToppings} extra topping{extraToppings > 1 ? 's' : ''}</span>
+                  <span>{extraToppings} {extraToppings === 1 ? t('builder.summary.extraTopping', language) : t('builder.summary.extraToppings', language)}</span>
                   <span>+€{extraToppings.toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-black text-coral-800 pt-1 border-t border-coral-200">
-                <span>Totaal</span>
+                <span>{t('builder.summary.total', language)}</span>
                 <span>€{currentPrice.toFixed(2)}</span>
               </div>
             </div>
@@ -493,12 +500,12 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
           {/* Selections with edit buttons */}
           <div className="card p-1 overflow-hidden">
             {([
-              { label: 'Maat',     value: `${sel.size} · basisbowl €${sel.size === 'Large' ? '13.50' : '11.00'}`, targetStep: 1 },
-              { label: 'Basis',    value: sel.base!,                   targetStep: 2 },
-              { label: 'Eiwit',    value: sel.protein!,                targetStep: 3 },
-              { label: 'Mix-ins',  value: formatCountMap(sel.mixIns),  targetStep: 4 },
-              { label: 'Dressing', value: sel.dressing!,               targetStep: 5 },
-              { label: 'Toppings', value: formatCountMap(sel.toppings), targetStep: 6 },
+              { label: t('builder.summary.size', language), value: `${sel.size} · ${t('builder.summary.baseBowl', language).toLowerCase()} €${sel.size === 'Large' ? '13.50' : '11.00'}`, targetStep: 1 },
+              { label: t('builder.summary.base', language), value: sel.base!, targetStep: 2 },
+              { label: t('builder.summary.protein', language), value: sel.protein!, targetStep: 3 },
+              { label: t('builder.summary.mixIns', language), value: formatCountMap(sel.mixIns), targetStep: 4 },
+              { label: t('builder.summary.dressing', language), value: sel.dressing!, targetStep: 5 },
+              { label: t('builder.summary.toppings', language), value: formatCountMap(sel.toppings), targetStep: 6 },
             ] as const).map(({ label, value, targetStep }) => (
               <div
                 key={label}
@@ -515,7 +522,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
                              flex-shrink-0 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded-lg transition-colors"
                 >
                   <Pencil className="w-3 h-3" />
-                  Aanpassen
+                  {t('builder.edit', language)}
                 </button>
               </div>
             ))}
@@ -529,7 +536,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
                        transition-all shadow-lg shadow-coral-500/30"
           >
             <ShoppingBag className="w-5 h-5" />
-            Toevoegen · €{currentPrice.toFixed(2)}
+            {t('builder.addToCart', language)} · €{currentPrice.toFixed(2)}
           </button>
         </div>
       )}
@@ -545,7 +552,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
                          text-slate-700 font-semibold px-5 py-3 rounded-2xl transition-all hover:bg-slate-50"
             >
               <ChevronLeft className="w-4 h-4" />
-              Terug
+              {t('builder.back', language)}
             </button>
           )}
           <button
@@ -555,7 +562,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
                        font-bold px-6 py-3 rounded-2xl transition-all shadow-md
                        disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {step === 6 ? 'Overzicht' : 'Volgende'}
+            {step === 6 ? t('builder.summary', language) : t('builder.next', language)}
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

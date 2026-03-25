@@ -5,8 +5,7 @@ import Pusher from 'pusher-js';
 import OrderCard from './OrderCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { t } from '@/locales/translations';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { t } from '@/locales/translations';
+
 
 export interface OrderItem {
   menuItemId: string;

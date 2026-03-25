@@ -10,7 +10,7 @@ export type AdminMenuItem = {
   _id:         string;
   name:        string;
   price:       number;
-  description: string;
+  description: { nl: string; en: string; fr: string };
   category:    'poke' | 'puree' | 'sides' | 'drinks';
   image:       string;
   available:   boolean;
@@ -38,16 +38,18 @@ interface Props {
 const CATEGORIES = ['poke', 'puree', 'sides', 'drinks'] as const;
 
 type FormData = {
-  name:        string;
-  price:       string;
-  description: string;
-  category:    'poke' | 'puree' | 'sides' | 'drinks';
-  image:       string;
-  ingredients: string;
+  name:          string;
+  price:         string;
+  descriptionNl: string;
+  descriptionEn: string;
+  descriptionFr: string;
+  category:      'poke' | 'puree' | 'sides' | 'drinks';
+  image:         string;
+  ingredients:   string;
 };
 
 const BLANK: FormData = {
-  name: '', price: '', description: '', category: 'poke', image: '', ingredients: '',
+  name: '', price: '', descriptionNl: '', descriptionEn: '', descriptionFr: '', category: 'poke', image: '', ingredients: '',
 };
 
 const STATUS_CHIP: Record<string, string> = {
@@ -92,7 +94,11 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
     return {
       name:        f.name,
       price:       Number(f.price),
-      description: f.description,
+      description: {
+        nl: f.descriptionNl,
+        en: f.descriptionEn,
+        fr: f.descriptionFr,
+      },
       category:    f.category,
       image:       f.image,
       ingredients: f.ingredients.split(',').map((s) => s.trim()).filter(Boolean),
@@ -101,12 +107,14 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
 
   function itemToForm(item: AdminMenuItem): FormData {
     return {
-      name:        item.name,
-      price:       String(item.price),
-      description: item.description,
-      category:    item.category,
-      image:       item.image,
-      ingredients: item.ingredients.join(', '),
+      name:          item.name,
+      price:         String(item.price),
+      descriptionNl: typeof item.description === 'object' ? item.description.nl : '',
+      descriptionEn: typeof item.description === 'object' ? item.description.en : '',
+      descriptionFr: typeof item.description === 'object' ? item.description.fr : '',
+      category:      item.category,
+      image:         item.image,
+      ingredients:   item.ingredients.join(', '),
     };
   }
 
@@ -279,7 +287,9 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-slate-400 truncate mt-0.5">{item.description}</p>
+                    <p className="text-sm text-slate-400 truncate mt-0.5">
+                      {typeof item.description === 'object' ? item.description.nl : item.description}
+                    </p>
                   </div>
 
                   <span className="text-sm font-bold text-slate-700 whitespace-nowrap flex-shrink-0">
@@ -438,10 +448,22 @@ function ItemForm({
         </select>
         <input placeholder="Afbeelding URL"            className={INP} {...txt('image')} />
         <textarea
-          placeholder="Beschrijving"
+          placeholder="🇳🇱 Beschrijving (NL)"
           rows={2}
           className={`${INP} sm:col-span-2 resize-none`}
-          {...txt('description')}
+          {...txt('descriptionNl')}
+        />
+        <textarea
+          placeholder="🇬🇧 Description (EN)"
+          rows={2}
+          className={`${INP} sm:col-span-2 resize-none`}
+          {...txt('descriptionEn')}
+        />
+        <textarea
+          placeholder="🇫🇷 Description (FR)"
+          rows={2}
+          className={`${INP} sm:col-span-2 resize-none`}
+          {...txt('descriptionFr')}
         />
         <input
           placeholder="Ingrediënten (komma gescheiden)"

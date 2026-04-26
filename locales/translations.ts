@@ -23,6 +23,7 @@ export const translations = {
     fullMenu: { nl: 'Volledig Menu', en: 'Full Menu', fr: 'Menu Complet' },
     noItems: { nl: 'Geen items beschikbaar.', en: 'No items available.', fr: 'Aucun article disponible.' },
     order: { nl: 'Bestelling', en: 'Order', fr: 'Commande' },
+    differentTable: { nl: 'Andere tafel?', en: 'Different table?', fr: 'Changer de table ?' },
   },
 
   // Table modal

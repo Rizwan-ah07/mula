@@ -70,13 +70,23 @@ const CAT_CHIP: Record<string, string> = {
 
 const INP = 'w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white';
 
+function toDateInput(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function AdminPanel({ initialItems, initialOrders }: Props) {
+  const todayInput = toDateInput(new Date());
   const [tab,      setTab]      = useState<'items' | 'orders'>('items');
   const [items,    setItems]    = useState<AdminMenuItem[]>(initialItems);
   const [orders]               = useState<AdminOrder[]>(initialOrders);
   const [filter,   setFilter]   = useState<'all' | 'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled'>('all');
+  const [rangeFrom, setRangeFrom] = useState(todayInput);
+  const [rangeTo, setRangeTo] = useState(todayInput);
   const [showAdd,  setShowAdd]  = useState(false);
   const [addForm,  setAddForm]  = useState<FormData>(BLANK);
   const [editId,   setEditId]   = useState<string | null>(null);
@@ -204,6 +214,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
   const todayCompletedRevenue = pastOrdersToday
     .filter((order) => order.status === 'completed')
     .reduce((sum, order) => sum + order.total, 0);
+  const rangeExportHref = `/api/orders/export?from=${encodeURIComponent(rangeFrom)}&to=${encodeURIComponent(rangeTo)}`;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -384,11 +395,41 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
                   {pastOrdersToday.length} orders · €{todayCompletedRevenue.toFixed(2)} completed omzet
                 </p>
               </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto] gap-2 items-end">
+              <label className="text-xs text-slate-500 font-medium">
+                Van
+                <input
+                  type="date"
+                  value={rangeFrom}
+                  onChange={(e) => setRangeFrom(e.target.value)}
+                  className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white"
+                />
+              </label>
+
+              <label className="text-xs text-slate-500 font-medium">
+                Tot en met
+                <input
+                  type="date"
+                  value={rangeTo}
+                  onChange={(e) => setRangeTo(e.target.value)}
+                  className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white"
+                />
+              </label>
+
               <a
                 href="/api/orders/today/export"
-                className="px-3 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
+                className="px-3 py-2 rounded-xl bg-slate-700 text-white text-sm font-semibold hover:bg-slate-800 transition-colors text-center"
               >
-                Export naar Excel (CSV)
+                Export vandaag
+              </a>
+
+              <a
+                href={rangeExportHref}
+                className="px-3 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors text-center"
+              >
+                Export range (CSV)
               </a>
             </div>
           </div>

@@ -90,6 +90,20 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
     setShowModal(false);
   }
 
+  function clearStoredTable() {
+    localStorage.removeItem(LS_KEY);
+
+    // Best-effort cleanup if a table cookie is introduced later.
+    document.cookie = `${LS_KEY}=; Max-Age=0; path=/`;
+    document.cookie = `table=; Max-Age=0; path=/`;
+  }
+
+  function handleDifferentTable() {
+    clearStoredTable();
+    setEffectiveTable(null);
+    setShowModal(true);
+  }
+
   // ── Cart helpers ──────────────────────────────────────────────────────────
 
   function addToCart(item: MenuItem, sizeLabel?: string) {
@@ -154,6 +168,18 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
       {showModal && <TableModal onConfirm={handleTableConfirm} />}
 
       <div className="max-w-3xl mx-auto px-4 pb-32">
+
+        {effectiveTable && (
+          <div className="mt-6 mb-1 flex items-center justify-between bg-white border border-slate-200 rounded-xl px-3 py-2">
+            <span className="text-sm font-medium text-slate-600">📍 Table {effectiveTable}</span>
+            <button
+              onClick={handleDifferentTable}
+              className="text-sm font-semibold text-brand-700 hover:text-brand-800"
+            >
+              {t('menu.differentTable', language)}
+            </button>
+          </div>
+        )}
 
         {/* Category tabs */}
         <div className="flex gap-2 mt-6 mb-4 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
@@ -258,8 +284,11 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
             onChangeQty={changeQty}
             onRemove={removeFromCart}
             onOrderPlaced={() => {
+              clearStoredTable();
               setCart([]);
               setCartOpen(false);
+              setEffectiveTable(null);
+              setShowModal(true);
             }}
           />
         )}

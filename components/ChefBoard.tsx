@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Pusher from 'pusher-js';
 import OrderCard from './OrderCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { t } from '@/locales/translations';
@@ -20,7 +19,7 @@ export interface Order {
   tableNumber: number;
   items: OrderItem[];
   notes: string;
-  status: 'pending' | 'preparing' | 'completed';
+  status: 'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled';
   total: number;
   createdAt: string;
 }
@@ -29,47 +28,33 @@ interface Props {
   initialOrders: Order[];
 }
 
-// Pusher channel / event names (must match lib/pusher-server.ts constants)
-const CHANNEL = 'kitchen';
-const E_NEW   = 'new-order';
-const E_UPD   = 'order-updated';
-
 export default function ChefBoard({ initialOrders }: Props) {
   const { language } = useLanguage();
   const [orders, setOrders] = useState<Order[]>(initialOrders);
 
   useEffect(() => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-    });
+    const refreshOrders = async () => {
+      try {
+        const res = await fetch('/api/orders', { cache: 'no-store' });
+        if (!res.ok) return;
+        const freshOrders = await res.json();
+        setOrders(freshOrders);
+      } catch {
+        // keep existing state if temporary network error
+      }
+    };
 
-    const channel = pusher.subscribe(CHANNEL);
-
-    channel.bind(E_NEW, (order: Order) => {
-      setOrders((prev) => {
-        // Prevent duplicates if SSR already included it
-        if (prev.some((o) => o._id === order._id)) return prev;
-        return [...prev, order];
-      });
-    });
-
-    channel.bind(E_UPD, ({ _id, status }: { _id: string; status: Order['status'] }) => {
-      setOrders((prev) =>
-        status === 'completed'
-          ? prev.filter((o) => o._id !== _id)
-          : prev.map((o) => (o._id === _id ? { ...o, status } : o))
-      );
-    });
+    const events = new EventSource('/api/order/stream');
+    events.addEventListener('order_change', refreshOrders);
+    events.addEventListener('connected', () => {});
 
     return () => {
-      channel.unbind_all();
-      pusher.unsubscribe(CHANNEL);
-      pusher.disconnect();
+      events.close();
     };
   }, []);
 
   function handleStatusUpdate(id: string, status: Order['status']) {
-    if (status === 'completed') {
+    if (status === 'completed' || status === 'cancelled') {
       setOrders((prev) => prev.filter((o) => o._id !== id));
     } else {
       setOrders((prev) =>
@@ -80,6 +65,7 @@ export default function ChefBoard({ initialOrders }: Props) {
 
   const pending   = orders.filter((o) => o.status === 'pending');
   const preparing = orders.filter((o) => o.status === 'preparing');
+  const waitingPayment = orders.filter((o) => o.status === 'waiting_payment');
 
   return (
     <div className="p-5">
@@ -123,6 +109,27 @@ export default function ChefBoard({ initialOrders }: Props) {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {preparing.map((order) => (
+                  <OrderCard
+                    key={order._id}
+                    order={order}
+                    onStatusUpdate={handleStatusUpdate}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Waiting payment column */}
+          {waitingPayment.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="inline-block w-3 h-3 rounded-full bg-brand-400" />
+                <h2 className="text-brand-300 font-semibold uppercase tracking-wider text-sm">
+                  {t('kitchen.waiting_payment', language)} ({waitingPayment.length})
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {waitingPayment.map((order) => (
                   <OrderCard
                     key={order._id}
                     order={order}

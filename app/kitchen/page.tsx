@@ -4,7 +4,7 @@ import ChefBoard from '@/components/ChefBoard';
 async function getActiveOrders(): Promise<IOrder[]> {
   const collection = await getOrdersCollection();
   return collection
-    .find({ status: { $ne: 'completed' } })
+    .find({ status: { $nin: ['completed', 'cancelled'] } })
     .sort({ createdAt: 1 })
     .toArray();
 }

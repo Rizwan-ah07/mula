@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, CheckCheck, ChefHat } from 'lucide-react';
+import { Clock, CheckCheck, ChefHat, XCircle } from 'lucide-react';
 import { updateOrderStatus } from '@/actions/orders';
 import type { Order } from './ChefBoard';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -23,7 +23,9 @@ function elapsed(createdAt: string, language: string): string {
 const STATUS_STYLES: Record<Order['status'], string> = {
   pending:   'bg-amber-500/20 text-amber-300 border-amber-500/30',
   preparing: 'bg-cyan-500/20  text-cyan-300  border-cyan-500/30',
-  completed: 'bg-brand-500/20 text-brand-300 border-brand-500/30',
+  waiting_payment: 'bg-brand-500/20 text-brand-300 border-brand-500/30',
+  completed: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+  cancelled: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
 };
 
 export default function OrderCard({ order, onStatusUpdate }: Props) {
@@ -42,13 +44,19 @@ export default function OrderCard({ order, onStatusUpdate }: Props) {
       className={`rounded-2xl border flex flex-col overflow-hidden transition-all duration-300 ${
         order.status === 'preparing'
           ? 'border-cyan-600/40 bg-slate-800/80'
+          : order.status === 'waiting_payment'
+          ? 'border-brand-600/40 bg-slate-800/80'
           : 'border-slate-700 bg-slate-800'
       }`}
     >
       {/* Header */}
       <div
         className={`px-4 py-3 flex items-center justify-between ${
-          order.status === 'preparing' ? 'bg-cyan-900/40' : 'bg-slate-700/50'
+          order.status === 'preparing'
+            ? 'bg-cyan-900/40'
+            : order.status === 'waiting_payment'
+            ? 'bg-brand-900/30'
+            : 'bg-slate-700/50'
         }`}
       >
         <div className="flex items-center gap-2">
@@ -117,7 +125,7 @@ export default function OrderCard({ order, onStatusUpdate }: Props) {
 
           {order.status === 'preparing' && (
             <button
-              onClick={() => handleAction('completed')}
+              onClick={() => handleAction('waiting_payment')}
               disabled={loading}
               className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-500 active:scale-95
                          text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-all
@@ -125,6 +133,32 @@ export default function OrderCard({ order, onStatusUpdate }: Props) {
             >
               <CheckCheck className="w-3.5 h-3.5" />
               {loading ? '…' : t('kitchen.markComplete', language)}
+            </button>
+          )}
+
+          {order.status === 'waiting_payment' && (
+            <button
+              onClick={() => handleAction('completed')}
+              disabled={loading}
+              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95
+                         text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-all
+                         disabled:opacity-50"
+            >
+              <CheckCheck className="w-3.5 h-3.5" />
+              {loading ? '…' : t('kitchen.markPaid', language)}
+            </button>
+          )}
+
+          {order.status !== 'completed' && order.status !== 'cancelled' && (
+            <button
+              onClick={() => handleAction('cancelled')}
+              disabled={loading}
+              className="flex items-center gap-1.5 bg-rose-600 hover:bg-rose-500 active:scale-95
+                         text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-all
+                         disabled:opacity-50"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              {loading ? '…' : t('kitchen.cancelOrder', language)}
             </button>
           )}
         </div>

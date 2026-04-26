@@ -16,7 +16,7 @@ export interface IOrder {
   tableNumber: number;
   items:       IOrderItem[];
   notes:       string;
-  status:      'pending' | 'preparing' | 'completed';
+  status:      'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled';
   total:       number;
   createdAt?:  Date;
   updatedAt?:  Date;

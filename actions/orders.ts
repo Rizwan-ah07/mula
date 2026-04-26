@@ -2,12 +2,6 @@
 
 import { ObjectId } from 'mongodb';
 import { getOrdersCollection } from '@/models/Order';
-import {
-  pusherServer,
-  KITCHEN_CHANNEL,
-  EVT_NEW_ORDER,
-  EVT_ORDER_UPDATED,
-} from '@/lib/pusher-server';
 
 export interface CartItem {
   menuItemId: string;
@@ -52,16 +46,6 @@ export async function submitOrder(payload: {
     const result  = await collection.insertOne(doc);
     const orderId = result.insertedId.toString();
 
-    await pusherServer.trigger(KITCHEN_CHANNEL, EVT_NEW_ORDER, {
-      _id:         orderId,
-      tableNumber: doc.tableNumber,
-      items:       doc.items,
-      notes:       doc.notes,
-      status:      doc.status,
-      total:       doc.total,
-      createdAt:   now.toISOString(),
-    });
-
     return { success: true, orderId };
   } catch (err) {
     console.error('[submitOrder]', err);
@@ -73,23 +57,38 @@ export async function submitOrder(payload: {
 
 export async function updateOrderStatus(
   orderId: string,
-  status:  'pending' | 'preparing' | 'completed',
+  status:  'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled',
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    if (!ObjectId.isValid(orderId)) {
+      return { success: false, error: 'Invalid order id.' };
+    }
+
     const collection = await getOrdersCollection();
 
-    const result = await collection.findOneAndUpdate(
+    const setValues: Record<string, unknown> = {
+      status,
+      updatedAt: new Date(),
+    };
+
+    if (status === 'waiting_payment') {
+      setValues.readyForPaymentAt = new Date();
+    }
+
+    if (status === 'completed') {
+      setValues.completedAt = new Date();
+    }
+
+    if (status === 'cancelled') {
+      setValues.cancelledAt = new Date();
+    }
+
+    const result = await collection.updateOne(
       { _id: new ObjectId(orderId) },
-      { $set: { status, updatedAt: new Date() } },
-      { returnDocument: 'after' },
+      { $set: setValues },
     );
 
-    if (!result) return { success: false, error: 'Order not found.' };
-
-    await pusherServer.trigger(KITCHEN_CHANNEL, EVT_ORDER_UPDATED, {
-      _id: orderId,
-      status,
-    });
+    if (result.matchedCount === 0) return { success: false, error: 'Order not found.' };
 
     return { success: true };
   } catch (err) {

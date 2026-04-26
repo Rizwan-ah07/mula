@@ -23,9 +23,10 @@ export type AdminOrder = {
   tableNumber: number;
   items:       { name: string; price: number; quantity: number; itemNotes?: string }[];
   notes:       string;
-  status:      'pending' | 'preparing' | 'completed';
+  status:      'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled';
   total:       number;
   createdAt:   string;
+  updatedAt?:  string;
 };
 
 interface Props {
@@ -55,7 +56,9 @@ const BLANK: FormData = {
 const STATUS_CHIP: Record<string, string> = {
   pending:   'bg-amber-100 text-amber-700',
   preparing: 'bg-blue-100  text-blue-700',
+  waiting_payment: 'bg-purple-100 text-purple-700',
   completed: 'bg-green-100 text-green-700',
+  cancelled: 'bg-rose-100 text-rose-700',
 };
 
 const CAT_CHIP: Record<string, string> = {
@@ -73,7 +76,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
   const [tab,      setTab]      = useState<'items' | 'orders'>('items');
   const [items,    setItems]    = useState<AdminMenuItem[]>(initialItems);
   const [orders]               = useState<AdminOrder[]>(initialOrders);
-  const [filter,   setFilter]   = useState<'all' | 'pending' | 'preparing' | 'completed'>('all');
+  const [filter,   setFilter]   = useState<'all' | 'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled'>('all');
   const [showAdd,  setShowAdd]  = useState(false);
   const [addForm,  setAddForm]  = useState<FormData>(BLANK);
   const [editId,   setEditId]   = useState<string | null>(null);
@@ -181,6 +184,26 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
   // ── Derived ───────────────────────────────────────────────────────────────
 
   const visibleOrders = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+  const pastOrdersToday = orders
+    .filter((order) => {
+      const createdAt = new Date(order.createdAt);
+      const isToday = createdAt >= todayStart && createdAt < todayEnd;
+      const isPast = order.status === 'completed' || order.status === 'cancelled';
+      return isToday && isPast;
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt ?? b.createdAt).getTime() -
+        new Date(a.updatedAt ?? a.createdAt).getTime()
+    );
+
+  const todayCompletedRevenue = pastOrdersToday
+    .filter((order) => order.status === 'completed')
+    .reduce((sum, order) => sum + order.total, 0);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -338,7 +361,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
         <div>
           {/* Status filter */}
           <div className="flex gap-2 mb-4 flex-wrap">
-            {(['all', 'pending', 'preparing', 'completed'] as const).map((s) => (
+            {(['all', 'pending', 'preparing', 'waiting_payment', 'completed', 'cancelled'] as const).map((s) => (
               <button
                 key={s}
                 onClick={() => setFilter(s)}
@@ -351,6 +374,23 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
                 {s === 'all' ? `Alle (${orders.length})` : `${s} (${orders.filter((o) => o.status === s).length})`}
               </button>
             ))}
+          </div>
+
+          <div className="mb-5 p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400 font-semibold">Vandaag · Past Orders</p>
+                <p className="text-sm text-slate-600 mt-0.5">
+                  {pastOrdersToday.length} orders · €{todayCompletedRevenue.toFixed(2)} completed omzet
+                </p>
+              </div>
+              <a
+                href="/api/orders/today/export"
+                className="px-3 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
+              >
+                Export naar Excel (CSV)
+              </a>
+            </div>
           </div>
 
           {visibleOrders.length === 0 ? (
@@ -400,6 +440,43 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
               ))}
             </div>
           )}
+
+          <div className="mt-8">
+            <h3 className="text-sm font-semibold text-slate-700 mb-2">Past Orders van Vandaag</h3>
+            {pastOrdersToday.length === 0 ? (
+              <p className="text-sm text-slate-400">Nog geen afgeronde of geannuleerde orders vandaag.</p>
+            ) : (
+              <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                <div className="grid grid-cols-12 gap-3 px-4 py-2.5 text-xs font-semibold text-slate-500 bg-slate-50 border-b border-slate-100">
+                  <span className="col-span-2">Tijd</span>
+                  <span className="col-span-4">Order</span>
+                  <span className="col-span-2">Tafel</span>
+                  <span className="col-span-2">Status</span>
+                  <span className="col-span-2 text-right">Bedrag</span>
+                </div>
+                {pastOrdersToday.map((order) => (
+                  <div key={`past-${order._id}`} className="grid grid-cols-12 gap-3 px-4 py-2.5 text-sm border-b border-slate-50 last:border-b-0">
+                    <span className="col-span-2 text-slate-500">
+                      {new Date(order.updatedAt ?? order.createdAt).toLocaleTimeString('nl-NL', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                    <span className="col-span-4 text-slate-700 truncate" title={order.items.map((item) => `${item.quantity}x ${item.name}`).join(', ')}>
+                      {order.items.map((item) => `${item.quantity}x ${item.name}`).join(', ')}
+                    </span>
+                    <span className="col-span-2 text-slate-700">T{order.tableNumber}</span>
+                    <span className="col-span-2">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${STATUS_CHIP[order.status]}`}>
+                        {order.status}
+                      </span>
+                    </span>
+                    <span className="col-span-2 text-right font-semibold text-slate-700">€{order.total.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

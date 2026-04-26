@@ -27,6 +27,33 @@ export default function Cart({
 
   const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
 
+  function detectBase(ingredients: string[]): string {
+    const baseIngredient = ingredients.find((ingredient) =>
+      /(rijst|rice|sla|lettuce|puree|purée|aardappelpuree|noodle|noedels)/i.test(ingredient)
+    );
+
+    return baseIngredient ?? 'Chef choice';
+  }
+
+  function getItemNotes(item: CartItem): string {
+    if (item.itemNotes?.trim()) {
+      return item.itemNotes.trim();
+    }
+
+    if (item.category === 'poke' || item.category === 'puree') {
+      const ingredients = item.ingredients.filter(Boolean);
+      const base = detectBase(ingredients);
+
+      if (ingredients.length === 0) {
+        return `Base: ${base}`;
+      }
+
+      return `Base: ${base} · Ingredients: ${ingredients.join(', ')}`;
+    }
+
+    return '';
+  }
+
   async function handleSubmit() {
     if (!tableNumber) return;
     setLoading(true);
@@ -41,7 +68,7 @@ export default function Cart({
                       : item.name,
         price:      item.price,
         quantity:   item.quantity,
-        itemNotes:  item.itemNotes ?? '',
+        itemNotes:  getItemNotes(item),
       })),
       notes,
     });

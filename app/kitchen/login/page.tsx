@@ -1,16 +1,22 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { FormEvent, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function KitchenLoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [nextPath, setNextPath] = useState('/kitchen');
 
-  const nextPath = searchParams.get('next') || '/kitchen';
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get('next');
+    if (next?.startsWith('/')) {
+      setNextPath(next);
+    }
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -30,7 +36,7 @@ export default function KitchenLoginPage() {
       return;
     }
 
-    router.replace(nextPath.startsWith('/') ? nextPath : '/kitchen');
+    router.replace(nextPath);
     router.refresh();
   }
 

@@ -83,7 +83,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
   const todayInput = toDateInput(new Date());
   const [tab,      setTab]      = useState<'items' | 'orders'>('items');
   const [items,    setItems]    = useState<AdminMenuItem[]>(initialItems);
-  const [orders]               = useState<AdminOrder[]>(initialOrders);
+  const [orders,   setOrders]   = useState<AdminOrder[]>(initialOrders);
   const [filter,   setFilter]   = useState<'all' | 'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled'>('all');
   const [rangeFrom, setRangeFrom] = useState(todayInput);
   const [rangeTo, setRangeTo] = useState(todayInput);
@@ -188,6 +188,20 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
       setEditId(null);
       router.refresh();
     }
+    setBusy(null);
+  }
+
+  async function deleteOrder(id: string) {
+    if (!confirm('Deze bestelling definitief verwijderen?')) return;
+
+    setBusy(`order-${id}`);
+    const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+
+    if (res.ok) {
+      setOrders((prev) => prev.filter((order) => order._id !== id));
+      router.refresh();
+    }
+
     setBusy(null);
   }
 
@@ -438,7 +452,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
             <p className="text-center text-slate-400 py-16">Geen bestellingen gevonden.</p>
           ) : (
             <div className="space-y-3">
-              {visibleOrders.map((order) => (
+                {visibleOrders.map((order) => (
                 <div key={order._id} className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div>
@@ -455,7 +469,17 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
                         })}
                       </p>
                     </div>
-                    <span className="font-bold text-slate-700 text-lg">€{order.total.toFixed(2)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-700 text-lg">€{order.total.toFixed(2)}</span>
+                        <button
+                          onClick={() => deleteOrder(order._id)}
+                          disabled={busy === `order-${order._id}`}
+                          className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                          title="Bestelling verwijderen"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                   </div>
 
                   <ul className="mt-3 space-y-1 border-t border-slate-50 pt-3">

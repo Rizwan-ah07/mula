@@ -46,10 +46,24 @@ export default function ChefBoard({ initialOrders }: Props) {
 
     const events = new EventSource('/api/order/stream');
     events.addEventListener('order_change', refreshOrders);
+    events.addEventListener('error', refreshOrders);
     events.addEventListener('connected', () => {});
+
+    const pollInterval = window.setInterval(refreshOrders, 10000);
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refreshOrders();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    refreshOrders();
 
     return () => {
       events.close();
+      window.clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
 

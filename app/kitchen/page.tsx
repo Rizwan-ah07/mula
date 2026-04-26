@@ -1,6 +1,9 @@
 import { getOrdersCollection, IOrder } from '@/models/Order';
 import ChefBoard from '@/components/ChefBoard';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function getActiveOrders(): Promise<IOrder[]> {
   const collection = await getOrdersCollection();
   return collection

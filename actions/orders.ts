@@ -11,15 +11,38 @@ export interface CartItem {
   itemNotes?: string;
 }
 
+export type CheckoutInfo = {
+  serviceType: 'dine_in' | 'takeaway';
+  tableNumber?: number | null;
+  customerName?: string;
+  phoneNumber?: string;
+  paymentMethod: 'cash';
+};
+
 // ── Submit a new order ────────────────────────────────────────────────────────
 
 export async function submitOrder(payload: {
-  tableNumber: number;
+  checkoutInfo: CheckoutInfo;
   items:       CartItem[];
   notes?:      string;
 }): Promise<{ success: boolean; orderId?: string; error?: string }> {
-  if (!payload.tableNumber || payload.items.length === 0) {
+  const { checkoutInfo } = payload;
+
+  if (payload.items.length === 0) {
     return { success: false, error: 'Invalid order payload.' };
+  }
+
+  if (checkoutInfo.serviceType === 'dine_in' && (!checkoutInfo.tableNumber || checkoutInfo.tableNumber <= 0)) {
+    return { success: false, error: 'Table number is required for dine in.' };
+  }
+
+  if (checkoutInfo.serviceType === 'takeaway') {
+    if (!checkoutInfo.customerName?.trim()) {
+      return { success: false, error: 'Name is required for takeaway.' };
+    }
+    if (!checkoutInfo.phoneNumber?.trim()) {
+      return { success: false, error: 'Phone number is required for takeaway.' };
+    }
   }
 
   try {
@@ -28,7 +51,11 @@ export async function submitOrder(payload: {
     const total      = payload.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
     const doc = {
-      tableNumber: payload.tableNumber,
+      serviceType: checkoutInfo.serviceType,
+      tableNumber: checkoutInfo.serviceType === 'dine_in' ? Number(checkoutInfo.tableNumber) : null,
+      customerName: checkoutInfo.customerName?.trim() ?? '',
+      phoneNumber: checkoutInfo.phoneNumber?.trim() ?? '',
+      paymentMethod: checkoutInfo.paymentMethod,
       items:       payload.items.map((i) => ({
         menuItemId: i.menuItemId,
         name:       i.name,

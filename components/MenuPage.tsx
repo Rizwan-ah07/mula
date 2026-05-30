@@ -7,6 +7,7 @@ import TableModal from './TableModal';
 import BowlBuilder, { type BowlCartItem } from './BowlBuilder';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { t } from '@/locales/translations';
+import type { CheckoutInfo } from '@/actions/orders';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -57,7 +58,7 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
   const [cart,           setCart]           = useState<CartItem[]>([]);
   const [activeTab,      setTab]            = useState<Tab>('all');
   const [cartOpen,       setCartOpen]       = useState(false);
-  const [effectiveTable, setEffectiveTable] = useState<number | null>(tableNumber);
+  const [checkoutInfo,   setCheckoutInfo]   = useState<CheckoutInfo | null>(null);
   const [showModal,      setShowModal]      = useState(false);
 
   const TABS: { label: string; value: Tab }[] = [
@@ -72,21 +73,34 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
   useEffect(() => {
     if (tableNumber && tableNumber > 0) {
       localStorage.setItem(LS_KEY, String(tableNumber));
-      setEffectiveTable(tableNumber);
+      setCheckoutInfo({
+        serviceType: 'dine_in',
+        tableNumber,
+        paymentMethod: 'cash',
+      });
       return;
     }
     const saved  = localStorage.getItem(LS_KEY);
     const parsed = saved ? parseInt(saved, 10) : NaN;
     if (!isNaN(parsed) && parsed > 0) {
-      setEffectiveTable(parsed);
+      setCheckoutInfo({
+        serviceType: 'dine_in',
+        tableNumber: parsed,
+        paymentMethod: 'cash',
+      });
     } else {
       setShowModal(true);
     }
   }, [tableNumber]);
 
-  function handleTableConfirm(num: number) {
-    localStorage.setItem(LS_KEY, String(num));
-    setEffectiveTable(num);
+  function handleCheckoutConfirm(info: CheckoutInfo) {
+    if (info.serviceType === 'dine_in' && info.tableNumber) {
+      localStorage.setItem(LS_KEY, String(info.tableNumber));
+    } else {
+      localStorage.removeItem(LS_KEY);
+    }
+
+    setCheckoutInfo(info);
     setShowModal(false);
   }
 
@@ -100,7 +114,7 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
 
   function handleDifferentTable() {
     clearStoredTable();
-    setEffectiveTable(null);
+    setCheckoutInfo(null);
     setShowModal(true);
   }
 
@@ -165,18 +179,27 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
 
   return (
     <>
-      {showModal && <TableModal onConfirm={handleTableConfirm} />}
+      {showModal && (
+        <TableModal
+          initialTableNumber={tableNumber}
+          onConfirm={handleCheckoutConfirm}
+        />
+      )}
 
       <div className="max-w-3xl mx-auto px-4 pb-32">
 
-        {effectiveTable && (
+        {checkoutInfo && (
           <div className="mt-6 mb-1 flex items-center justify-between bg-white border border-slate-200 rounded-xl px-3 py-2">
-            <span className="text-sm font-medium text-slate-600">📍 Table {effectiveTable}</span>
+            <span className="text-sm font-medium text-slate-600">
+              {checkoutInfo.serviceType === 'takeaway'
+                ? `🛍 ${t('cart.takeaway', language)}`
+                : `📍 Table ${checkoutInfo.tableNumber}`}
+            </span>
             <button
               onClick={handleDifferentTable}
               className="text-sm font-semibold text-brand-700 hover:text-brand-800"
             >
-              {t('menu.differentTable', language)}
+              {t('menu.changeOrder', language)}
             </button>
           </div>
         )}
@@ -279,7 +302,7 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
         {cartOpen && (
           <Cart
             cart={cart}
-            tableNumber={effectiveTable}
+            checkoutInfo={checkoutInfo}
             onClose={() => setCartOpen(false)}
             onChangeQty={changeQty}
             onRemove={removeFromCart}
@@ -287,7 +310,7 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
               clearStoredTable();
               setCart([]);
               setCartOpen(false);
-              setEffectiveTable(null);
+              setCheckoutInfo(null);
               setShowModal(true);
             }}
           />

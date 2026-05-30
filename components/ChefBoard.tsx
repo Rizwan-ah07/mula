@@ -16,7 +16,10 @@ export interface OrderItem {
 
 export interface Order {
   _id: string;
+  serviceType?: 'dine_in' | 'takeaway';
   tableNumber: number;
+  customerName?: string;
+  phoneNumber?: string;
   items: OrderItem[];
   notes: string;
   status: 'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled';

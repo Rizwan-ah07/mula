@@ -31,6 +31,12 @@ const STATUS_STYLES: Record<Order['status'], string> = {
 export default function OrderCard({ order, onStatusUpdate }: Props) {
   const { language } = useLanguage();
   const [loading, setLoading] = useState(false);
+  const orderLabel = order.serviceType === 'takeaway'
+    ? t('cart.takeaway', language)
+    : `T${order.tableNumber}`;
+  const takeawayContact = order.serviceType === 'takeaway'
+    ? [order.customerName, order.phoneNumber].filter(Boolean).join(' · ')
+    : '';
 
   async function handleAction(newStatus: Order['status']) {
     setLoading(true);
@@ -60,7 +66,7 @@ export default function OrderCard({ order, onStatusUpdate }: Props) {
         }`}
       >
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-black text-white">T{order.tableNumber}</span>
+          <span className="text-2xl font-black text-white">{orderLabel}</span>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border capitalize
                             ${STATUS_STYLES[order.status]}`}>
             {t(`kitchen.${order.status}`, language)}
@@ -71,6 +77,12 @@ export default function OrderCard({ order, onStatusUpdate }: Props) {
           {elapsed(order.createdAt, language)}
         </div>
       </div>
+
+      {order.serviceType === 'takeaway' && takeawayContact && (
+        <div className="px-4 py-2 text-xs text-slate-300 border-t border-slate-700/60">
+          {takeawayContact}
+        </div>
+      )}
 
       {/* Items */}
       <div className="px-4 py-3 flex-1 space-y-2.5">

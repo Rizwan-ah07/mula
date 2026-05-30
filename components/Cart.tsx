@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { X, Minus, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { submitOrder } from '@/actions/orders';
 import type { CartItem } from './MenuPage';
+import type { CheckoutInfo } from '@/actions/orders';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { t } from '@/locales/translations';
 
 interface Props {
   cart:          CartItem[];
-  tableNumber:   number | null;
+  checkoutInfo:  CheckoutInfo | null;
   onClose:       () => void;
   onChangeQty:   (id: string, delta: number) => void;
   onRemove:      (id: string) => void;
@@ -17,7 +18,7 @@ interface Props {
 }
 
 export default function Cart({
-  cart, tableNumber, onClose, onChangeQty, onRemove, onOrderPlaced,
+  cart, checkoutInfo, onClose, onChangeQty, onRemove, onOrderPlaced,
 }: Props) {
   const { language } = useLanguage();
   const [notes,   setNotes]   = useState('');
@@ -55,12 +56,12 @@ export default function Cart({
   }
 
   async function handleSubmit() {
-    if (!tableNumber) return;
+    if (!checkoutInfo) return;
     setLoading(true);
     setError('');
 
     const result = await submitOrder({
-      tableNumber,
+      checkoutInfo,
       items: cart.map((item) => ({
         menuItemId: item._id,
         name:       item.selectedSize
@@ -106,9 +107,15 @@ export default function Cart({
         {success ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 py-12 px-6 text-center">
             <CheckCircle2 className="w-16 h-16 text-brand-500" />
-            <h3 className="text-2xl font-bold text-brand-700">{t('cart.orderPlaced', language)}</h3>
+            <h3 className="text-2xl font-bold text-brand-700">
+              {checkoutInfo?.serviceType === 'takeaway'
+                ? t('cart.orderPlacedTakeaway', language)
+                : t('cart.orderPlaced', language)}
+            </h3>
             <p className="text-slate-500">
-              {t('cart.table', language)} {tableNumber} — {t('cart.orderSuccess', language)}
+              {checkoutInfo?.serviceType === 'takeaway'
+                ? `${t('cart.weWillContact', language)} ${t('cart.cashOnly', language)}`
+                : `${t('cart.table', language)} ${checkoutInfo?.tableNumber ?? '—'} — ${t('cart.orderSuccess', language)}`}
             </p>
           </div>
         ) : (
@@ -184,7 +191,7 @@ export default function Cart({
                 <span>€{total.toFixed(2)}</span>
               </div>
 
-              {!tableNumber && (
+              {!checkoutInfo && (
                 <div className="flex items-center gap-2 text-amber-600 text-sm mb-3
                                 bg-amber-50 rounded-xl px-3 py-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -196,12 +203,14 @@ export default function Cart({
 
               <button
                 onClick={handleSubmit}
-                disabled={!tableNumber || loading}
+                disabled={!checkoutInfo || loading}
                 className="btn-primary w-full text-base py-3"
               >
                 {loading
                   ? t('cart.placing', language)
-                  : `${t('cart.placeOrderWithTable', language)} ${tableNumber ?? '—'}`}
+                  : checkoutInfo?.serviceType === 'takeaway'
+                  ? t('cart.placeTakeaway', language)
+                  : `${t('cart.placeOrderWithTable', language)} ${checkoutInfo?.tableNumber ?? '—'}`}
               </button>
             </div>
           </>

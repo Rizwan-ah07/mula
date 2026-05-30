@@ -13,10 +13,14 @@ export interface IOrderItem {
 
 export interface IOrder {
   _id?:        ObjectId;
+  serviceType: 'dine_in' | 'takeaway';
   tableNumber: number;
   items:       IOrderItem[];
   notes:       string;
   status:      'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled';
+  customerName?: string;
+  phoneNumber?: string;
+  paymentMethod?: 'cash';
   total:       number;
   createdAt?:  Date;
   updatedAt?:  Date;

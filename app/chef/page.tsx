@@ -5,11 +5,16 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 async function getActiveOrders(): Promise<IOrder[]> {
-  const collection = await getOrdersCollection();
-  return collection
-    .find({ status: { $nin: ['completed', 'cancelled'] } })
-    .sort({ createdAt: 1 })
-    .toArray();
+  try {
+    const collection = await getOrdersCollection();
+    return await collection
+      .find({ status: { $nin: ['completed', 'cancelled'] } })
+      .sort({ createdAt: 1 })
+      .toArray();
+  } catch (error) {
+    console.error('[chef/getActiveOrders]', error);
+    return [];
+  }
 }
 
 export default async function ChefPage() {

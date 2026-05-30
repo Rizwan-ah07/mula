@@ -23,34 +23,48 @@ export const translations = {
     fullMenu: { nl: 'Volledig Menu', en: 'Full Menu', fr: 'Menu Complet' },
     noItems: { nl: 'Geen items beschikbaar.', en: 'No items available.', fr: 'Aucun article disponible.' },
     order: { nl: 'Bestelling', en: 'Order', fr: 'Commande' },
-    differentTable: { nl: 'Andere tafel?', en: 'Different table?', fr: 'Changer de table ?' },
+    changeOrder: { nl: 'Andere bestelling?', en: 'Change order?', fr: 'Changer la commande ?' },
   },
 
   // Table modal
   table: {
-    title: { nl: 'Wat is je tafelnummer?', en: 'What\'s your table?', fr: 'Quel est votre numéro de table?' },
-    subtitle: { nl: 'Voer het nummer op je tafel in om te beginnen met bestellen.', en: 'Enter the number shown on your table to start ordering.', fr: 'Entrez le numéro indiqué sur votre table pour commencer.' },
-    label: { nl: 'Tafelnummer', en: 'Table Number', fr: 'Numéro de Table' },
-    placeholder: { nl: 'bijv. 5', en: 'e.g. 5', fr: 'ex. 5' },
-    confirm: { nl: 'Bevestigen', en: 'Confirm Table', fr: 'Confirmer' },
-    error: { nl: 'Voer een geldig tafelnummer in (1 – 999).', en: 'Please enter a valid table number (1 – 999).', fr: 'Veuillez entrer un numéro de table valide (1 – 999).' },
-    helpText: { nl: 'Kan je tafelnummer niet vinden? Vraag een teamlid om hulp.', en: 'Can\'t find your table number? Ask a team member for help.', fr: 'Vous ne trouvez pas votre numéro? Demandez à un membre de l\'équipe.' },
+    title: { nl: 'Hoe wil je bestellen?', en: 'How would you like to order?', fr: 'Comment souhaitez-vous commander ?' },
+    subtitle: { nl: 'Kies dine in of takeaway om verder te gaan.', en: 'Choose dine in or takeaway to continue.', fr: 'Choisissez sur place ou à emporter pour continuer.' },
+    dineIn: { nl: 'Dine in', en: 'Dine in', fr: 'Sur place' },
+    takeaway: { nl: 'Afhaal', en: 'Afhaal', fr: 'Afhaal' },
+    tableLabel: { nl: 'Tafelnummer', en: 'Table Number', fr: 'Numéro de table' },
+    tablePlaceholder: { nl: 'bijv. 5', en: 'e.g. 5', fr: 'ex. 5' },
+    nameLabel: { nl: 'Naam', en: 'Name', fr: 'Nom' },
+    namePlaceholder: { nl: 'bijv. Sarah', en: 'e.g. Sarah', fr: 'ex. Sarah' },
+    phoneLabel: { nl: 'Telefoonnummer', en: 'Phone number', fr: 'Numéro de téléphone' },
+    phonePlaceholder: { nl: 'bijv. +32 4xx xx xx xx', en: 'e.g. +32 4xx xx xx xx', fr: 'ex. +32 4xx xx xx xx' },
+    cashOnly: { nl: 'Afhaal: alleen contant betalen.', en: 'Afhaal: cash only.', fr: 'Afhaal : paiement en especes uniquement.' },
+    confirmDineIn: { nl: 'Bevestig tafel', en: 'Confirm table', fr: 'Confirmer la table' },
+    confirmTakeaway: { nl: 'Bevestig takeaway', en: 'Confirm takeaway', fr: 'Confirmer à emporter' },
+    changeType: { nl: 'Verander type', en: 'Change type', fr: 'Changer le type' },
+    error: { nl: 'Vul alle verplichte velden correct in.', en: 'Please fill in all required fields correctly.', fr: 'Veuillez remplir tous les champs obligatoires correctement.' },
+    helpText: { nl: 'Heb je hulp nodig? Vraag een teamlid om ondersteuning.', en: 'Need help? Ask a team member.', fr: 'Besoin d\'aide ? Demandez à un membre de l\'équipe.' },
   },
 
   // Cart
   cart: {
     title: { nl: 'Jouw Bestelling', en: 'Your Order', fr: 'Votre Commande' },
     table: { nl: 'Tafel', en: 'Table', fr: 'Table' },
+    takeaway: { nl: 'Afhaal', en: 'Afhaal', fr: 'Afhaal' },
     total: { nl: 'Totaal', en: 'Total', fr: 'Total' },
     perItem: { nl: 'per stuk', en: 'per item', fr: 'par article' },
     specialInstructions: { nl: 'Speciale instructies', en: 'Special instructions', fr: 'Instructions spéciales' },
     instructionsPlaceholder: { nl: 'Allergieën, extra saus, geen uien...', en: 'Allergies, extra sauce, no onions...', fr: 'Allergies, sauce supplémentaire, pas d\'oignons...' },
     placeOrder: { nl: 'Bestelling plaatsen', en: 'Place order', fr: 'Passer commande' },
     placeOrderWithTable: { nl: 'Bestelling plaatsen · Tafel', en: 'Place order · Table', fr: 'Passer commande · Table' },
+    placeTakeaway: { nl: 'Takeaway bestellen', en: 'Place takeaway order', fr: 'Commander à emporter' },
     placing: { nl: 'Bestelling plaatsen…', en: 'Placing order…', fr: 'Commande en cours…' },
     scanQR: { nl: 'Scan de QR-code aan uw tafel om te bestellen.', en: 'Scan the QR code at your table to order.', fr: 'Scannez le QR code sur votre table pour commander.' },
     orderPlaced: { nl: 'Bestelling geplaatst!', en: 'Order placed!', fr: 'Commande passée!' },
+    orderPlacedTakeaway: { nl: 'Afhaal besteld!', en: 'Afhaal order placed!', fr: 'Afhaal commande placee !' },
     orderSuccess: { nl: 'uw bestelling gaat naar de keuken. 🍣', en: 'your order is on its way to the kitchen. 🍣', fr: 'votre commande est envoyée en cuisine. 🍣' },
+    weWillContact: { nl: 'We nemen contact op wanneer je bestelling klaar is.', en: 'We will contact you when your order is ready.', fr: 'Nous vous contacterons quand votre commande sera prête.' },
+    cashOnly: { nl: 'Alleen contant betalen.', en: 'Cash only.', fr: 'Paiement en especes uniquement.' },
   },
 
   // Bowl Builder
@@ -181,16 +195,16 @@ export const translations = {
     feature1Body: { nl: 'Elk ingrediënt wordt dagelijks vers ingekocht en bereid vlak voordat je bowl wordt samengesteld.', en: 'Every ingredient is sourced daily and prepped right before your bowl is assembled.', fr: 'Chaque ingrédient est acheté quotidiennement et préparé juste avant l\'assemblage de votre bowl.' },
 
     feature2Title: { nl: 'Bestellen aan Tafel', en: 'Table-Side Ordering', fr: 'Commande à Table' },
-    feature2Body: { nl: 'Scan de QR-code, bouw je bowl, en deze gaat rechtstreeks naar de keuken — geen wachtrij.', en: 'Scan the QR code, build your bowl, and it goes straight to the kitchen — no waiting in line.', fr: 'Scannez le QR code, créez votre bowl, et elle part directement en cuisine — pas de file d\'attente.' },
+    feature2Body: { nl: 'Scan de QR-code, en stel je eigen bowl samen. Deze gaat rechtstreeks naar de keuken - geen wachtrij.', en: 'Scan the QR code, and build your own bowl — it goes straight to the kitchen - no waiting in line.', fr: 'Scannez le QR code et composez votre propre bowl. Il part directement en cuisine - pas de file d\'attente.' },
 
     feature3Title: { nl: 'Personaliseer Alles', en: 'Customise Everything', fr: 'Personnalisez Tout' },
     feature3Body: { nl: 'Kies je basis, proteïne, toppings en saus. Jouw bowl, jouw keuze.', en: 'Pick your base, protein, toppings, and sauce. Your bowl, your way.', fr: 'Choisissez votre base, protéine, garnitures et sauce. Votre bowl, à votre façon.' },
 
     ctaTitle: { nl: 'Klaar om je bowl te maken?', en: 'Ready to build your bowl?', fr: 'Prêt à créer votre bowl?' },
-    ctaSubtitle: { nl: 'Scan de QR-code aan je tafel of bekijk het menu om te beginnen met bestellen.', en: 'Scan the QR code at your table or browse the menu to start ordering.', fr: 'Scannez le QR code sur votre table ou parcourez le menu pour commencer.' },
+    ctaSubtitle: { nl: 'Bestel nu', en: 'Order now', fr: 'Commandez maintenant' },
     browseMenu: { nl: 'Bekijk het Menu →', en: 'Browse the Menu →', fr: 'Parcourir le Menu →' },
 
-    footer: { nl: '© {year} · Verse Poke & Puree Bowls', en: '© {year} · Fresh Poke & Puree Bowls', fr: '© {year} · Bowls Poke & Purée Frais' },
+    footer: { nl: '© {year} · Verse Pokebowls & More', en: '© {year} · Verse Pokebowls & More', fr: '© {year} · Verse Pokebowls & More' },
   },
 
   // Contact page

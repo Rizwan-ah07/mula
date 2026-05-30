@@ -178,7 +178,7 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
         {/* Colour bar */}
         <div className="h-2 bg-gradient-to-r from-brand-600 via-coral-500 to-gold-500" />
 
-        <div className="px-8 py-8">
+        <div className="px-8 py-8 max-h-[80vh] overflow-y-auto">
           {/* Icon + heading */}
           <div className="flex flex-col items-center text-center mb-6">
             <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center mb-4">
@@ -198,14 +198,15 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
           {/* Form */}
           <form onSubmit={handleSubmit} noValidate>
             {!serviceType ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => chooseService('dine_in')}
-                  className="rounded-2xl border-2 border-slate-200 hover:border-brand-500 bg-slate-50 hover:bg-brand-50 px-4 py-4 text-left transition-colors"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm
+                             transition-all hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center">
                       <Store className="w-5 h-5 text-brand-700" />
                     </div>
                     <div>
@@ -218,10 +219,11 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
                 <button
                   type="button"
                   onClick={() => chooseService('takeaway')}
-                  className="rounded-2xl border-2 border-slate-200 hover:border-brand-500 bg-slate-50 hover:bg-brand-50 px-4 py-4 text-left transition-colors"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm
+                             transition-all hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center">
                       <ShoppingBag className="w-5 h-5 text-brand-700" />
                     </div>
                     <div>
@@ -234,10 +236,11 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
                 <button
                   type="button"
                   onClick={() => chooseService('delivery')}
-                  className="rounded-2xl border-2 border-slate-200 hover:border-brand-500 bg-slate-50 hover:bg-brand-50 px-4 py-4 text-left transition-colors"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm
+                             transition-all hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center">
                       <ShoppingBag className="w-5 h-5 text-brand-700" />
                     </div>
                     <div>

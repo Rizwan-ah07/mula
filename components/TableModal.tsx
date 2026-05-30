@@ -21,6 +21,7 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
   const [tableValue, setTableValue] = useState('');
   const [nameValue, setNameValue] = useState('');
   const [phoneValue, setPhoneValue] = useState('');
+  const [addressValue, setAddressValue] = useState('');
   const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -75,7 +76,8 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
 
     const name = nameValue.trim();
     const phone = phoneValue.trim();
-    if (!name || !phone) {
+    const address = addressValue.trim();
+    if (!name || !phone || (serviceType === 'delivery' && !address)) {
       setError(t('table.error', language));
       inputRef.current?.focus();
       return;
@@ -85,6 +87,7 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
       serviceType,
       customerName: name,
       phoneNumber: phone,
+      deliveryAddress: serviceType === 'delivery' ? address : undefined,
       paymentMethod: 'cash',
     });
   }
@@ -156,6 +159,22 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
                     </div>
                   </div>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => chooseService('delivery')}
+                  className="rounded-2xl border-2 border-slate-200 hover:border-brand-500 bg-slate-50 hover:bg-brand-50 px-4 py-4 text-left transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center">
+                      <ShoppingBag className="w-5 h-5 text-brand-700" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800">{t('table.delivery', language)}</p>
+                      <p className="text-sm text-slate-500">{t('table.deliveryInfo', language)}</p>
+                    </div>
+                  </div>
+                </button>
               </div>
             ) : serviceType === 'dine_in' ? (
               <>
@@ -223,6 +242,32 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
                                   : 'border-slate-200 focus:border-brand-500'
                               }`}
                 />
+                {serviceType === 'delivery' && (
+                  <>
+                    <label
+                      htmlFor="address-input"
+                      className="block text-sm font-semibold text-slate-700 mb-1.5 mt-4"
+                    >
+                      {t('table.addressLabel', language)}
+                    </label>
+                    <input
+                      id="address-input"
+                      type="text"
+                      value={addressValue}
+                      onChange={(e) => { setAddressValue(e.target.value); setError(''); }}
+                      placeholder={t('table.addressPlaceholder', language)}
+                      className={`w-full border-2 rounded-xl px-4 py-3 text-base font-semibold text-center
+                                  text-slate-800 focus:outline-none transition-colors ${
+                                    error
+                                      ? 'border-red-400 focus:border-red-500'
+                                      : 'border-slate-200 focus:border-brand-500'
+                                  }`}
+                    />
+                    <p className="mt-2 text-xs text-slate-500 text-center">
+                      {t('table.deliveryInfo', language)}
+                    </p>
+                  </>
+                )}
                 <p className="mt-2 text-xs text-slate-500 text-center">{t('table.cashOnly', language)}</p>
               </>
             )}
@@ -244,6 +289,8 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
                 ? t('table.confirmDineIn', language)
                 : serviceType === 'takeaway'
                 ? t('table.confirmTakeaway', language)
+                : serviceType === 'delivery'
+                ? t('table.confirmDelivery', language)
                 : t('table.confirmDineIn', language)}
             </button>
           </form>

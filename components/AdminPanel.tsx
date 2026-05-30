@@ -20,10 +20,11 @@ export type AdminMenuItem = {
 
 export type AdminOrder = {
   _id:         string;
-  serviceType?: 'dine_in' | 'takeaway';
-  tableNumber: number;
+  serviceType?: 'dine_in' | 'takeaway' | 'delivery';
+  tableNumber: number | null;
   customerName?: string;
   phoneNumber?: string;
+  deliveryAddress?: string;
   items:       { name: string; price: number; quantity: number; itemNotes?: string }[];
   notes:       string;
   status:      'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled';
@@ -74,11 +75,13 @@ const CAT_CHIP: Record<string, string> = {
 const INP = 'w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white';
 
 function getOrderLabel(order: AdminOrder): string {
-  return order.serviceType === 'takeaway' ? 'Afhaal' : `T${order.tableNumber}`;
+  if (order.serviceType === 'delivery') return 'Levering';
+  if (order.serviceType === 'takeaway') return 'Afhaal';
+  return `T${order.tableNumber ?? '-'}`;
 }
 
 function getOrderContact(order: AdminOrder): string {
-  if (order.serviceType !== 'takeaway') return '';
+  if (order.serviceType !== 'takeaway' && order.serviceType !== 'delivery') return '';
   return [order.customerName, order.phoneNumber].filter(Boolean).join(' · ');
 }
 
@@ -470,8 +473,11 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-slate-800">{getOrderLabel(order)}</span>
-                        {order.serviceType === 'takeaway' && getOrderContact(order) && (
+                        {(order.serviceType === 'takeaway' || order.serviceType === 'delivery') && getOrderContact(order) && (
                           <span className="text-xs text-slate-500">{getOrderContact(order)}</span>
+                        )}
+                        {order.serviceType === 'delivery' && order.deliveryAddress && (
+                          <span className="text-xs text-slate-500">{order.deliveryAddress}</span>
                         )}
                         <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full capitalize ${STATUS_CHIP[order.status]}`}>
                           {order.status}
@@ -547,8 +553,11 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
                     </span>
                     <span className="col-span-2 text-slate-700">
                       {getOrderLabel(order)}
-                      {order.serviceType === 'takeaway' && getOrderContact(order) && (
+                      {(order.serviceType === 'takeaway' || order.serviceType === 'delivery') && getOrderContact(order) && (
                         <span className="block text-xs text-slate-400 mt-0.5">{getOrderContact(order)}</span>
+                      )}
+                      {order.serviceType === 'delivery' && order.deliveryAddress && (
+                        <span className="block text-xs text-slate-400 mt-0.5">{order.deliveryAddress}</span>
                       )}
                     </span>
                     <span className="col-span-2">

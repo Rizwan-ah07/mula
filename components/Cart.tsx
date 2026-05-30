@@ -27,6 +27,9 @@ export default function Cart({
   const [error,   setError]   = useState('');
 
   const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const isDelivery = checkoutInfo?.serviceType === 'delivery';
+  const minDeliveryTotal = 15;
+  const belowDeliveryMin = isDelivery && total < minDeliveryTotal;
 
   function detectBase(ingredients: string[]): string {
     const baseIngredient = ingredients.find((ingredient) =>
@@ -108,12 +111,16 @@ export default function Cart({
           <div className="flex-1 flex flex-col items-center justify-center gap-4 py-12 px-6 text-center">
             <CheckCircle2 className="w-16 h-16 text-brand-500" />
             <h3 className="text-2xl font-bold text-brand-700">
-              {checkoutInfo?.serviceType === 'takeaway'
+              {checkoutInfo?.serviceType === 'delivery'
+                ? t('cart.orderPlacedDelivery', language)
+                : checkoutInfo?.serviceType === 'takeaway'
                 ? t('cart.orderPlacedTakeaway', language)
                 : t('cart.orderPlaced', language)}
             </h3>
             <p className="text-slate-500">
-              {checkoutInfo?.serviceType === 'takeaway'
+              {checkoutInfo?.serviceType === 'delivery'
+                ? t('cart.weWillContact', language)
+                : checkoutInfo?.serviceType === 'takeaway'
                 ? `${t('cart.weWillContact', language)} ${t('cart.cashOnly', language)}`
                 : `${t('cart.table', language)} ${checkoutInfo?.tableNumber ?? '—'} — ${t('cart.orderSuccess', language)}`}
             </p>
@@ -199,15 +206,23 @@ export default function Cart({
                 </div>
               )}
 
+              {belowDeliveryMin && (
+                <p className="text-amber-600 text-sm mb-2 text-center">
+                  {t('table.deliveryInfo', language)}
+                </p>
+              )}
+
               {error && <p className="text-red-500 text-sm mb-2 text-center">{error}</p>}
 
               <button
                 onClick={handleSubmit}
-                disabled={!checkoutInfo || loading}
+                disabled={!checkoutInfo || loading || belowDeliveryMin}
                 className="btn-primary w-full text-base py-3"
               >
                 {loading
                   ? t('cart.placing', language)
+                  : checkoutInfo?.serviceType === 'delivery'
+                  ? t('cart.placeDelivery', language)
                   : checkoutInfo?.serviceType === 'takeaway'
                   ? t('cart.placeTakeaway', language)
                   : `${t('cart.placeOrderWithTable', language)} ${checkoutInfo?.tableNumber ?? '—'}`}

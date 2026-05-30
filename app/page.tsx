@@ -65,14 +65,6 @@ export default function HomePage() {
             >
               {t('home.orderNow', language)}
             </Link>
-            <Link
-              href="/menu"
-              className="inline-flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25
-                         backdrop-blur border border-white/25 text-white font-semibold
-                         px-8 py-4 rounded-2xl text-lg transition-all duration-150"
-            >
-              {t('home.viewMenu', language)}
-            </Link>
           </div>
         </div>
 

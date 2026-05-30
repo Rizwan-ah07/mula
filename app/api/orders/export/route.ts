@@ -56,15 +56,24 @@ export async function GET(req: NextRequest) {
     .sort({ updatedAt: -1, createdAt: -1 })
     .toArray();
 
-  const header = ['Time', 'Order ID', 'Type', 'Name', 'Contact', 'Status', 'Order Details', 'Total EUR'];
+  const header = ['Time', 'Order ID', 'Type', 'Name', 'Contact', 'Address', 'Status', 'Order Details', 'Total EUR'];
   const rows = orders.map((order) => {
     const orderTime = new Date(order.updatedAt ?? order.createdAt ?? new Date()).toISOString();
     const details = order.items
       .map((item) => `${item.quantity}x ${item.name}`)
       .join(' | ');
-    const type = order.serviceType === 'takeaway' ? 'Afhaal' : `T${order.tableNumber}`;
-    const name = order.serviceType === 'takeaway' ? (order.customerName ?? '') : '';
-    const contact = order.serviceType === 'takeaway' ? (order.phoneNumber ?? '') : '';
+    const type = order.serviceType === 'delivery'
+      ? 'Levering'
+      : order.serviceType === 'takeaway'
+      ? 'Afhaal'
+      : `T${order.tableNumber}`;
+    const name = order.serviceType === 'delivery' || order.serviceType === 'takeaway'
+      ? (order.customerName ?? '')
+      : '';
+    const contact = order.serviceType === 'delivery' || order.serviceType === 'takeaway'
+      ? (order.phoneNumber ?? '')
+      : '';
+    const address = order.serviceType === 'delivery' ? (order.deliveryAddress ?? '') : '';
 
     return [
       orderTime,
@@ -72,6 +81,7 @@ export async function GET(req: NextRequest) {
       type,
       name,
       contact,
+      address,
       order.status,
       details,
       order.total.toFixed(2),

@@ -31,12 +31,15 @@ const STATUS_STYLES: Record<Order['status'], string> = {
 export default function OrderCard({ order, onStatusUpdate }: Props) {
   const { language } = useLanguage();
   const [loading, setLoading] = useState(false);
-  const orderLabel = order.serviceType === 'takeaway'
+  const orderLabel = order.serviceType === 'delivery'
+    ? t('cart.delivery', language)
+    : order.serviceType === 'takeaway'
     ? t('cart.takeaway', language)
-    : `T${order.tableNumber}`;
-  const takeawayContact = order.serviceType === 'takeaway'
-    ? [order.customerName, order.phoneNumber].filter(Boolean).join(' · ')
-    : '';
+    : `T${order.tableNumber ?? '-'}`;
+  const takeawayContact =
+    order.serviceType === 'takeaway' || order.serviceType === 'delivery'
+      ? [order.customerName, order.phoneNumber].filter(Boolean).join(' · ')
+      : '';
 
   async function handleAction(newStatus: Order['status']) {
     setLoading(true);
@@ -78,9 +81,15 @@ export default function OrderCard({ order, onStatusUpdate }: Props) {
         </div>
       </div>
 
-      {order.serviceType === 'takeaway' && takeawayContact && (
+      {(order.serviceType === 'takeaway' || order.serviceType === 'delivery') && takeawayContact && (
         <div className="px-4 py-2 text-xs text-slate-300 border-t border-slate-700/60">
           {takeawayContact}
+        </div>
+      )}
+
+      {order.serviceType === 'delivery' && order.deliveryAddress && (
+        <div className="px-4 py-2 text-xs text-slate-300 border-t border-slate-700/60">
+          {order.deliveryAddress}
         </div>
       )}
 

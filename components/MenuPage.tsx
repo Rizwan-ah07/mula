@@ -191,7 +191,9 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
         {checkoutInfo && (
           <div className="mt-6 mb-1 flex items-center justify-between bg-white border border-slate-200 rounded-xl px-3 py-2">
             <span className="text-sm font-medium text-slate-600">
-              {checkoutInfo.serviceType === 'takeaway'
+              {checkoutInfo.serviceType === 'delivery'
+                ? `🚚 ${t('cart.delivery', language)}`
+                : checkoutInfo.serviceType === 'takeaway'
                 ? `🛍 ${t('cart.takeaway', language)}`
                 : `📍 Table ${checkoutInfo.tableNumber}`}
             </span>

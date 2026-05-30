@@ -40,6 +40,14 @@ export default function OrderCard({ order, onStatusUpdate }: Props) {
     order.serviceType === 'takeaway' || order.serviceType === 'delivery'
       ? [order.customerName, order.phoneNumber].filter(Boolean).join(' · ')
       : '';
+  const deliveryAddressLine = order.serviceType === 'delivery'
+    ? [
+        [order.deliveryStreet, order.deliveryHouseNumber].filter(Boolean).join(' '),
+        [order.deliveryPostalCode, order.deliveryCity].filter(Boolean).join(' '),
+      ]
+        .filter(Boolean)
+        .join(', ') || order.deliveryAddress
+    : '';
 
   async function handleAction(newStatus: Order['status']) {
     setLoading(true);
@@ -87,9 +95,9 @@ export default function OrderCard({ order, onStatusUpdate }: Props) {
         </div>
       )}
 
-      {order.serviceType === 'delivery' && order.deliveryAddress && (
+      {order.serviceType === 'delivery' && deliveryAddressLine && (
         <div className="px-4 py-2 text-xs text-slate-300 border-t border-slate-700/60">
-          {order.deliveryAddress}
+          {deliveryAddressLine}
         </div>
       )}
 

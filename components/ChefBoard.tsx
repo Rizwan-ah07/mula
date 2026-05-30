@@ -20,6 +20,10 @@ export interface Order {
   tableNumber: number | null;
   customerName?: string;
   phoneNumber?: string;
+  deliveryStreet?: string;
+  deliveryHouseNumber?: string;
+  deliveryPostalCode?: string;
+  deliveryCity?: string;
   deliveryAddress?: string;
   items: OrderItem[];
   notes: string;

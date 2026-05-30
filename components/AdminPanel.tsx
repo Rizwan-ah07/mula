@@ -24,6 +24,10 @@ export type AdminOrder = {
   tableNumber: number | null;
   customerName?: string;
   phoneNumber?: string;
+  deliveryStreet?: string;
+  deliveryHouseNumber?: string;
+  deliveryPostalCode?: string;
+  deliveryCity?: string;
   deliveryAddress?: string;
   items:       { name: string; price: number; quantity: number; itemNotes?: string }[];
   notes:       string;
@@ -83,6 +87,13 @@ function getOrderLabel(order: AdminOrder): string {
 function getOrderContact(order: AdminOrder): string {
   if (order.serviceType !== 'takeaway' && order.serviceType !== 'delivery') return '';
   return [order.customerName, order.phoneNumber].filter(Boolean).join(' · ');
+}
+
+function getOrderAddress(order: AdminOrder): string {
+  if (order.serviceType !== 'delivery') return '';
+  const line1 = [order.deliveryStreet, order.deliveryHouseNumber].filter(Boolean).join(' ');
+  const line2 = [order.deliveryPostalCode, order.deliveryCity].filter(Boolean).join(' ');
+  return [line1, line2].filter(Boolean).join(', ') || order.deliveryAddress || '';
 }
 
 function toDateInput(date: Date): string {
@@ -476,8 +487,8 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
                         {(order.serviceType === 'takeaway' || order.serviceType === 'delivery') && getOrderContact(order) && (
                           <span className="text-xs text-slate-500">{getOrderContact(order)}</span>
                         )}
-                        {order.serviceType === 'delivery' && order.deliveryAddress && (
-                          <span className="text-xs text-slate-500">{order.deliveryAddress}</span>
+                        {order.serviceType === 'delivery' && getOrderAddress(order) && (
+                          <span className="text-xs text-slate-500">{getOrderAddress(order)}</span>
                         )}
                         <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full capitalize ${STATUS_CHIP[order.status]}`}>
                           {order.status}
@@ -556,8 +567,8 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
                       {(order.serviceType === 'takeaway' || order.serviceType === 'delivery') && getOrderContact(order) && (
                         <span className="block text-xs text-slate-400 mt-0.5">{getOrderContact(order)}</span>
                       )}
-                      {order.serviceType === 'delivery' && order.deliveryAddress && (
-                        <span className="block text-xs text-slate-400 mt-0.5">{order.deliveryAddress}</span>
+                      {order.serviceType === 'delivery' && getOrderAddress(order) && (
+                        <span className="block text-xs text-slate-400 mt-0.5">{getOrderAddress(order)}</span>
                       )}
                     </span>
                     <span className="col-span-2">

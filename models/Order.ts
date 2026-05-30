@@ -20,6 +20,10 @@ export interface IOrder {
   status:      'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled';
   customerName?: string;
   phoneNumber?: string;
+  deliveryStreet?: string;
+  deliveryHouseNumber?: string;
+  deliveryPostalCode?: string;
+  deliveryCity?: string;
   deliveryAddress?: string;
   deliveryDistanceKm?: number | null;
   paymentMethod?: 'cash';

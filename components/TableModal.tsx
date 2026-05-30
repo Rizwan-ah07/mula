@@ -21,7 +21,26 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
   const [tableValue, setTableValue] = useState('');
   const [nameValue, setNameValue] = useState('');
   const [phoneValue, setPhoneValue] = useState('');
-  const [addressValue, setAddressValue] = useState('');
+  const [streetValue, setStreetValue] = useState('');
+  const [houseNumberValue, setHouseNumberValue] = useState('');
+  const [postalCodeValue, setPostalCodeValue] = useState('');
+  const [cityValue, setCityValue] = useState('');
+  const [addressSuggestions, setAddressSuggestions] = useState<
+    Array<{
+      display_name: string;
+      address?: {
+        road?: string;
+        pedestrian?: string;
+        house_number?: string;
+        postcode?: string;
+        city?: string;
+        town?: string;
+        village?: string;
+        hamlet?: string;
+      };
+    }>
+  >([]);
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -76,8 +95,11 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
 
     const name = nameValue.trim();
     const phone = phoneValue.trim();
-    const address = addressValue.trim();
-    if (!name || !phone || (serviceType === 'delivery' && !address)) {
+    const street = streetValue.trim();
+    const houseNumber = houseNumberValue.trim();
+    const postalCode = postalCodeValue.trim();
+    const city = cityValue.trim();
+    if (!name || !phone || (serviceType === 'delivery' && (!street || !houseNumber || !postalCode || !city))) {
       setError(t('table.error', language));
       inputRef.current?.focus();
       return;
@@ -87,9 +109,58 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
       serviceType,
       customerName: name,
       phoneNumber: phone,
-      deliveryAddress: serviceType === 'delivery' ? address : undefined,
+      deliveryStreet: serviceType === 'delivery' ? street : undefined,
+      deliveryHouseNumber: serviceType === 'delivery' ? houseNumber : undefined,
+      deliveryPostalCode: serviceType === 'delivery' ? postalCode : undefined,
+      deliveryCity: serviceType === 'delivery' ? city : undefined,
       paymentMethod: 'cash',
     });
+  }
+
+  const addressQuery = [streetValue, houseNumberValue, postalCodeValue, cityValue]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(' ');
+
+  useEffect(() => {
+    if (serviceType !== 'delivery') {
+      setAddressSuggestions([]);
+      return;
+    }
+
+    if (addressQuery.length < 6) {
+      setAddressSuggestions([]);
+      return;
+    }
+
+    const handle = window.setTimeout(async () => {
+      setIsSuggesting(true);
+      try {
+        const res = await fetch(`/api/geocode/suggest?q=${encodeURIComponent(addressQuery)}`);
+        if (!res.ok) {
+          setAddressSuggestions([]);
+          return;
+        }
+        const data = (await res.json()) as typeof addressSuggestions;
+        setAddressSuggestions(data);
+      } catch {
+        setAddressSuggestions([]);
+      } finally {
+        setIsSuggesting(false);
+      }
+    }, 400);
+
+    return () => window.clearTimeout(handle);
+  }, [addressQuery, serviceType]);
+
+  function applySuggestion(suggestion: (typeof addressSuggestions)[number]) {
+    const address = suggestion.address ?? {};
+    setStreetValue(address.road ?? address.pedestrian ?? '');
+    setHouseNumberValue(address.house_number ?? '');
+    setPostalCodeValue(address.postcode ?? '');
+    setCityValue(address.city ?? address.town ?? address.village ?? address.hamlet ?? '');
+    setAddressSuggestions([]);
+    setError('');
   }
 
   return (
@@ -245,17 +316,17 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
                 {serviceType === 'delivery' && (
                   <>
                     <label
-                      htmlFor="address-input"
+                      htmlFor="street-input"
                       className="block text-sm font-semibold text-slate-700 mb-1.5 mt-4"
                     >
-                      {t('table.addressLabel', language)}
+                      {t('table.streetLabel', language)}
                     </label>
                     <input
-                      id="address-input"
+                      id="street-input"
                       type="text"
-                      value={addressValue}
-                      onChange={(e) => { setAddressValue(e.target.value); setError(''); }}
-                      placeholder={t('table.addressPlaceholder', language)}
+                      value={streetValue}
+                      onChange={(e) => { setStreetValue(e.target.value); setError(''); }}
+                      placeholder={t('table.streetPlaceholder', language)}
                       className={`w-full border-2 rounded-xl px-4 py-3 text-base font-semibold text-center
                                   text-slate-800 focus:outline-none transition-colors ${
                                     error
@@ -263,6 +334,86 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
                                       : 'border-slate-200 focus:border-brand-500'
                                   }`}
                     />
+                    <label
+                      htmlFor="house-number-input"
+                      className="block text-sm font-semibold text-slate-700 mb-1.5 mt-4"
+                    >
+                      {t('table.houseNumberLabel', language)}
+                    </label>
+                    <input
+                      id="house-number-input"
+                      type="text"
+                      value={houseNumberValue}
+                      onChange={(e) => { setHouseNumberValue(e.target.value); setError(''); }}
+                      placeholder={t('table.houseNumberPlaceholder', language)}
+                      className={`w-full border-2 rounded-xl px-4 py-3 text-base font-semibold text-center
+                                  text-slate-800 focus:outline-none transition-colors ${
+                                    error
+                                      ? 'border-red-400 focus:border-red-500'
+                                      : 'border-slate-200 focus:border-brand-500'
+                                  }`}
+                    />
+                    <label
+                      htmlFor="postal-code-input"
+                      className="block text-sm font-semibold text-slate-700 mb-1.5 mt-4"
+                    >
+                      {t('table.postalCodeLabel', language)}
+                    </label>
+                    <input
+                      id="postal-code-input"
+                      type="text"
+                      value={postalCodeValue}
+                      onChange={(e) => { setPostalCodeValue(e.target.value); setError(''); }}
+                      placeholder={t('table.postalCodePlaceholder', language)}
+                      className={`w-full border-2 rounded-xl px-4 py-3 text-base font-semibold text-center
+                                  text-slate-800 focus:outline-none transition-colors ${
+                                    error
+                                      ? 'border-red-400 focus:border-red-500'
+                                      : 'border-slate-200 focus:border-brand-500'
+                                  }`}
+                    />
+                    <label
+                      htmlFor="city-input"
+                      className="block text-sm font-semibold text-slate-700 mb-1.5 mt-4"
+                    >
+                      {t('table.cityLabel', language)}
+                    </label>
+                    <input
+                      id="city-input"
+                      type="text"
+                      value={cityValue}
+                      onChange={(e) => { setCityValue(e.target.value); setError(''); }}
+                      placeholder={t('table.cityPlaceholder', language)}
+                      className={`w-full border-2 rounded-xl px-4 py-3 text-base font-semibold text-center
+                                  text-slate-800 focus:outline-none transition-colors ${
+                                    error
+                                      ? 'border-red-400 focus:border-red-500'
+                                      : 'border-slate-200 focus:border-brand-500'
+                                  }`}
+                    />
+                    {(addressSuggestions.length > 0 || isSuggesting) && (
+                      <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-2">
+                        <p className="text-xs font-semibold text-slate-500 mb-2">
+                          {t('table.addressSuggestions', language)}
+                        </p>
+                        <div className="space-y-1 max-h-40 overflow-y-auto">
+                          {isSuggesting && addressSuggestions.length === 0 && (
+                            <p className="text-xs text-slate-400">…</p>
+                          )}
+                          {addressSuggestions.map((suggestion) => (
+                            <button
+                              key={suggestion.display_name}
+                              type="button"
+                              onClick={() => applySuggestion(suggestion)}
+                              className="w-full text-left text-xs text-slate-600 hover:text-slate-800
+                                         hover:bg-white rounded-lg px-2 py-1 transition-colors"
+                            >
+                              {suggestion.display_name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <p className="mt-2 text-xs text-slate-500 text-center">
                       {t('table.deliveryInfo', language)}
                     </p>

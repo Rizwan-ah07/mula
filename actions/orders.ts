@@ -16,7 +16,10 @@ export type CheckoutInfo = {
   tableNumber?: number | null;
   customerName?: string;
   phoneNumber?: string;
-  deliveryAddress?: string;
+  deliveryStreet?: string;
+  deliveryHouseNumber?: string;
+  deliveryPostalCode?: string;
+  deliveryCity?: string;
   paymentMethod: 'cash';
 };
 
@@ -41,9 +44,25 @@ function haversineKm(a: { lat: number; lon: number }, b: { lat: number; lon: num
   return 2 * 6371 * Math.asin(Math.sqrt(h));
 }
 
-async function geocodeAddress(address: string): Promise<{ lat: number; lon: number } | null> {
+type GeocodeResult = {
+  lat: number;
+  lon: number;
+  address?: {
+    country_code?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    county?: string;
+    state?: string;
+    province?: string;
+  };
+};
+
+async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
   const url = new URL('https://nominatim.openstreetmap.org/search');
   url.searchParams.set('format', 'json');
+  url.searchParams.set('addressdetails', '1');
   url.searchParams.set('limit', '1');
   url.searchParams.set('q', address);
 
@@ -56,14 +75,34 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lon: numb
 
   if (!response.ok) return null;
 
-  const data = (await response.json()) as Array<{ lat: string; lon: string }>;
+  const data = (await response.json()) as Array<{
+    lat: string;
+    lon: string;
+    address?: GeocodeResult['address'];
+  }>;
   if (!data[0]) return null;
 
   const lat = Number(data[0].lat);
   const lon = Number(data[0].lon);
   if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
 
-  return { lat, lon };
+  return { lat, lon, address: data[0].address };
+}
+
+function isAntwerpAddress(address?: GeocodeResult['address']): boolean {
+  if (!address) return false;
+  const country = (address.country_code ?? '').toLowerCase();
+  if (country !== 'be') return false;
+
+  const city = (address.city || address.town || address.village || address.municipality || '').toLowerCase();
+  const county = (address.county || '').toLowerCase();
+  const state = (address.state || address.province || '').toLowerCase();
+
+  if (city.includes('antwerp') || city.includes('antwerpen')) return true;
+  if (county.includes('antwerp') || county.includes('antwerpen')) return true;
+  if (state.includes('antwerp') || state.includes('antwerpen')) return true;
+
+  return false;
 }
 
 // ── Submit a new order ────────────────────────────────────────────────────────
@@ -92,8 +131,14 @@ export async function submitOrder(payload: {
     }
   }
 
-  if (checkoutInfo.serviceType === 'delivery' && !checkoutInfo.deliveryAddress?.trim()) {
-    return { success: false, error: 'Address is required for delivery.' };
+  if (checkoutInfo.serviceType === 'delivery') {
+    const street = checkoutInfo.deliveryStreet?.trim() ?? '';
+    const houseNumber = checkoutInfo.deliveryHouseNumber?.trim() ?? '';
+    const postalCode = checkoutInfo.deliveryPostalCode?.trim() ?? '';
+    const city = checkoutInfo.deliveryCity?.trim() ?? '';
+    if (!street || !houseNumber || !postalCode || !city) {
+      return { success: false, error: 'Address is required for delivery.' };
+    }
   }
 
   try {
@@ -103,14 +148,26 @@ export async function submitOrder(payload: {
 
     let deliveryDistanceKm: number | null = null;
 
+    let deliveryAddressLine = '';
+
     if (checkoutInfo.serviceType === 'delivery') {
       if (total < DELIVERY_MIN_TOTAL) {
         return { success: false, error: `Minimum order for delivery is €${DELIVERY_MIN_TOTAL}.` };
       }
 
-      const coords = await geocodeAddress(checkoutInfo.deliveryAddress ?? '');
+      const street = checkoutInfo.deliveryStreet?.trim() ?? '';
+      const houseNumber = checkoutInfo.deliveryHouseNumber?.trim() ?? '';
+      const postalCode = checkoutInfo.deliveryPostalCode?.trim() ?? '';
+      const city = checkoutInfo.deliveryCity?.trim() ?? '';
+      deliveryAddressLine = `${street} ${houseNumber}, ${postalCode} ${city}`.trim();
+
+      const coords = await geocodeAddress(deliveryAddressLine);
       if (!coords) {
         return { success: false, error: 'Unable to locate delivery address.' };
+      }
+
+      if (!isAntwerpAddress(coords.address)) {
+        return { success: false, error: 'Delivery is only available in Antwerp.' };
       }
 
       const distance = haversineKm(DELIVERY_ORIGIN, coords);
@@ -126,7 +183,11 @@ export async function submitOrder(payload: {
       tableNumber: checkoutInfo.serviceType === 'dine_in' ? Number(checkoutInfo.tableNumber) : null,
       customerName: checkoutInfo.customerName?.trim() ?? '',
       phoneNumber: checkoutInfo.phoneNumber?.trim() ?? '',
-      deliveryAddress: checkoutInfo.deliveryAddress?.trim() ?? '',
+      deliveryStreet: checkoutInfo.deliveryStreet?.trim() ?? '',
+      deliveryHouseNumber: checkoutInfo.deliveryHouseNumber?.trim() ?? '',
+      deliveryPostalCode: checkoutInfo.deliveryPostalCode?.trim() ?? '',
+      deliveryCity: checkoutInfo.deliveryCity?.trim() ?? '',
+      deliveryAddress: deliveryAddressLine,
       deliveryDistanceKm,
       paymentMethod: checkoutInfo.paymentMethod,
       items:       payload.items.map((i) => ({

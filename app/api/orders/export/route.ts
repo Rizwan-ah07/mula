@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     .sort({ updatedAt: -1, createdAt: -1 })
     .toArray();
 
-  const header = ['Time', 'Order ID', 'Type', 'Name', 'Contact', 'Address', 'Status', 'Order Details', 'Total EUR'];
+  const header = ['Time', 'Order ID', 'Type', 'Name', 'Contact', 'Street', 'Number', 'Postal Code', 'City', 'Status', 'Order Details', 'Total EUR'];
   const rows = orders.map((order) => {
     const orderTime = new Date(order.updatedAt ?? order.createdAt ?? new Date()).toISOString();
     const details = order.items
@@ -73,7 +73,13 @@ export async function GET(req: NextRequest) {
     const contact = order.serviceType === 'delivery' || order.serviceType === 'takeaway'
       ? (order.phoneNumber ?? '')
       : '';
-    const address = order.serviceType === 'delivery' ? (order.deliveryAddress ?? '') : '';
+    const street = order.serviceType === 'delivery' ? (order.deliveryStreet ?? '') : '';
+    const houseNumber = order.serviceType === 'delivery' ? (order.deliveryHouseNumber ?? '') : '';
+    const postalCode = order.serviceType === 'delivery' ? (order.deliveryPostalCode ?? '') : '';
+    const city = order.serviceType === 'delivery' ? (order.deliveryCity ?? '') : '';
+    const legacyAddress = order.serviceType === 'delivery' && !street && !houseNumber && !postalCode && !city
+      ? (order.deliveryAddress ?? '')
+      : '';
 
     return [
       orderTime,
@@ -81,7 +87,10 @@ export async function GET(req: NextRequest) {
       type,
       name,
       contact,
-      address,
+      street || legacyAddress,
+      houseNumber,
+      postalCode,
+      city,
       order.status,
       details,
       order.total.toFixed(2),

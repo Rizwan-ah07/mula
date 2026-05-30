@@ -48,8 +48,8 @@ export default function ContactPage() {
 
             <div className="flex items-center gap-3 text-sm text-slate-600">
               <Phone className="w-5 h-5 text-coral-500 flex-shrink-0" />
-              <a href="tel:+32xxxxxxxxx" className="hover:text-brand-700 transition-colors font-medium">
-                +32 xxx xx xx
+              <a href="tel:+32484020741" className="hover:text-brand-700 transition-colors font-medium">
+                +32 484020741
               </a>
             </div>
 

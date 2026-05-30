@@ -198,7 +198,7 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
           {/* Form */}
           <form onSubmit={handleSubmit} noValidate>
             {!serviceType ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <button
                   type="button"
                   onClick={() => chooseService('dine_in')}

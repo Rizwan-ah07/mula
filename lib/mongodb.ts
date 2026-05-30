@@ -19,7 +19,7 @@ const globalForMongo = globalThis as typeof globalThis & {
 if (!globalForMongo._mongoClientPromise) {
   globalForMongo._mongoClientPromise = new MongoClient(uri, {
     maxPoolSize:              10,
-    serverSelectionTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 15000,
     socketTimeoutMS:          45000,
   }).connect();
 }

@@ -79,7 +79,7 @@ export const translations = {
     orderPlacedDelivery: { nl: 'Levering besteld!', en: 'Delivery order placed!', fr: 'Commande en livraison passee !' },
     orderSuccess: { nl: 'uw bestelling gaat naar de keuken. 🍣', en: 'your order is on its way to the kitchen. 🍣', fr: 'votre commande est envoyée en cuisine. 🍣' },
     weWillContact: { nl: 'We nemen contact op wanneer je bestelling klaar is.', en: 'We will contact you when your order is ready.', fr: 'Nous vous contacterons quand votre commande sera prête.' },
-    cashOnly: { nl: 'afhalen', en: 'afhalen', fr: 'afhalen' },
+    cashOnly: { nl: 'Afhalen', en: 'Takeaway', fr: 'décoller' },
   },
 
   // Bowl Builder

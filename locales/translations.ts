@@ -40,7 +40,7 @@ export const translations = {
     phoneLabel: { nl: 'Telefoonnummer', en: 'Phone number', fr: 'Numéro de téléphone' },
     phonePlaceholder: { nl: 'bijv. +32 4xx xx xx xx', en: 'e.g. +32 4xx xx xx xx', fr: 'ex. +32 4xx xx xx xx' },
     streetLabel: { nl: 'Straat', en: 'Street', fr: 'Rue' },
-    streetPlaceholder: { nl: 'bijv. Statieslei', en: 'e.g. Statieslei', fr: 'ex. Statieslei' },
+    streetPlaceholder: { nl: 'bijv. Statielei', en: 'e.g. Statielei', fr: 'ex. Statielei' },
     houseNumberLabel: { nl: 'Huisnummer', en: 'House Number', fr: 'Numero' },
     houseNumberPlaceholder: { nl: 'bijv. 25', en: 'e.g. 25', fr: 'ex. 25' },
     postalCodeLabel: { nl: 'Postcode', en: 'Postal Code', fr: 'Code Postal' },

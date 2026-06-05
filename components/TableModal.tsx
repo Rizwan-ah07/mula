@@ -228,7 +228,6 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
                     </div>
                     <div>
                       <p className="font-bold text-slate-800">{t('table.takeaway', language)}</p>
-                      <p className="text-sm text-slate-500">{t('table.cashOnly', language)}</p>
                     </div>
                   </div>
                 </button>
@@ -422,7 +421,6 @@ export default function TableModal({ initialTableNumber, onConfirm }: Props) {
                     </p>
                   </>
                 )}
-                <p className="mt-2 text-xs text-slate-500 text-center">{t('table.cashOnly', language)}</p>
               </>
             )}
 

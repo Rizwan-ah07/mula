@@ -121,7 +121,7 @@ export default function Cart({
               {checkoutInfo?.serviceType === 'delivery'
                 ? t('cart.weWillContact', language)
                 : checkoutInfo?.serviceType === 'takeaway'
-                ? `${t('cart.weWillContact', language)} ${t('cart.cashOnly', language)}`
+                ? t('cart.weWillContact', language)
                 : `${t('cart.table', language)} ${checkoutInfo?.tableNumber ?? '—'} — ${t('cart.orderSuccess', language)}`}
             </p>
           </div>

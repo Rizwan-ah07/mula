@@ -48,8 +48,8 @@ export const translations = {
     cityLabel: { nl: 'Stad', en: 'City', fr: 'Ville' },
     cityPlaceholder: { nl: 'bijv. Borgerhout', en: 'e.g. Borgerhout', fr: 'ex. Borgerhout' },
     addressSuggestions: { nl: 'Adres suggesties', en: 'Address suggestions', fr: 'Suggestions d\'adresse' },
-    cashOnly: { nl: 'Alleen contant betalen.', en: 'Cash only.', fr: 'Paiement en especes uniquement.' },
-    deliveryInfo: { nl: 'Gratis levering binnen 15 km vanaf Statieslei 25 (enkel Antwerpen). Minimum €15.', en: 'Free delivery within 15 km from Statieslei 25 (Antwerp only). Minimum €15.', fr: 'Livraison gratuite dans un rayon de 15 km de Statieslei 25 (Anvers uniquement). Minimum 15€.' },
+    cashOnly: { nl: 'afhalen', en: 'afhalen', fr: 'afhalen' },
+    deliveryInfo: { nl: 'Gratis levering binnen 15 km vanaf Statielei 25 (enkel Antwerpen). Minimum €15.', en: 'Free delivery within 15 km from Statielei 25 (Antwerp only). Minimum €15.', fr: 'Livraison gratuite dans un rayon de 15 km de Statielei 25 (Anvers uniquement). Minimum 15€.' },
     confirmDineIn: { nl: 'Bevestig tafel', en: 'Confirm table', fr: 'Confirmer la table' },
     confirmTakeaway: { nl: 'Bevestig afhaal', en: 'Confirm takeaway', fr: 'Confirmer à emporter' },
     confirmDelivery: { nl: 'Bevestig levering', en: 'Confirm delivery', fr: 'Confirmer la livraison' },
@@ -79,7 +79,7 @@ export const translations = {
     orderPlacedDelivery: { nl: 'Levering besteld!', en: 'Delivery order placed!', fr: 'Commande en livraison passee !' },
     orderSuccess: { nl: 'uw bestelling gaat naar de keuken. 🍣', en: 'your order is on its way to the kitchen. 🍣', fr: 'votre commande est envoyée en cuisine. 🍣' },
     weWillContact: { nl: 'We nemen contact op wanneer je bestelling klaar is.', en: 'We will contact you when your order is ready.', fr: 'Nous vous contacterons quand votre commande sera prête.' },
-    cashOnly: { nl: 'Alleen contant betalen.', en: 'Cash only.', fr: 'Paiement en especes uniquement.' },
+    cashOnly: { nl: 'afhalen', en: 'afhalen', fr: 'afhalen' },
   },
 
   // Bowl Builder

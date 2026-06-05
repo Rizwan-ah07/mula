@@ -172,7 +172,7 @@ export async function submitOrder(payload: {
 
       const distance = haversineKm(DELIVERY_ORIGIN, coords);
       if (distance > DELIVERY_MAX_KM) {
-        return { success: false, error: 'Delivery is only available within 15 km of Statieslei 25.' };
+        return { success: false, error: 'Delivery is only available within 15 km of Statielei 25.' };
       }
 
       deliveryDistanceKm = Math.round(distance * 10) / 10;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pencil, Trash2, Eye, EyeOff, Plus, X, LogOut } from 'lucide-react';
 
@@ -107,7 +107,7 @@ function toDateInput(date: Date): string {
 
 export default function AdminPanel({ initialItems, initialOrders }: Props) {
   const todayInput = toDateInput(new Date());
-  const [tab,      setTab]      = useState<'items' | 'orders'>('items');
+  const [tab,      setTab]      = useState<'items' | 'orders' | 'bowlOptions'>('items');
   const [items,    setItems]    = useState<AdminMenuItem[]>(initialItems);
   const [orders,   setOrders]   = useState<AdminOrder[]>(initialOrders);
   const [filter,   setFilter]   = useState<'all' | 'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled'>('all');
@@ -118,6 +118,16 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
   const [editId,   setEditId]   = useState<string | null>(null);
   const [editForm, setEditForm] = useState<FormData>(BLANK);
   const [busy,     setBusy]     = useState<string | null>(null);
+  const [bowlOptions, setBowlOptions] = useState<{
+    _id?: string;
+    bases?: string[];
+    proteins?: string[];
+    mixIns?: string[];
+    dressings?: string[];
+    toppings?: string[];
+  } | null>(null);
+  const [newBowlOption, setNewBowlOption] = useState('');
+  const [selectedBowlCategory, setSelectedBowlCategory] = useState<'bases' | 'proteins' | 'mixIns' | 'dressings' | 'toppings'>('bases');
 
   const router = useRouter();
 
@@ -125,6 +135,58 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
     await fetch('/api/admin/auth', { method: 'DELETE' });
     router.push('/admin/login');
     router.refresh();
+  }
+
+  // Fetch bowl options on mount
+  useEffect(() => {
+    const fetchBowlOptions = async () => {
+      try {
+        const res = await fetch('/api/bowl-options');
+        const data = await res.json();
+        setBowlOptions(data);
+      } catch (error) {
+        console.error('Error fetching bowl options:', error);
+      }
+    };
+    fetchBowlOptions();
+  }, []);
+
+  async function addBowlOption(category: 'bases' | 'proteins' | 'mixIns' | 'dressings' | 'toppings', item: string) {
+    if (!item.trim()) return;
+    setBusy(`bowl-${category}`);
+    try {
+      const res = await fetch('/api/bowl-options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, item: item.trim(), action: 'add' }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setBowlOptions(updated);
+        setNewBowlOption('');
+      }
+    } catch (error) {
+      console.error('Error adding bowl option:', error);
+    }
+    setBusy(null);
+  }
+
+  async function removeBowlOption(category: 'bases' | 'proteins' | 'mixIns' | 'dressings' | 'toppings', item: string) {
+    setBusy(`bowl-${category}-${item}`);
+    try {
+      const res = await fetch('/api/bowl-options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, item, action: 'remove' }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setBowlOptions(updated);
+      }
+    } catch (error) {
+      console.error('Error removing bowl option:', error);
+    }
+    setBusy(null);
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -263,7 +325,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
 
       {/* Tab bar */}
       <div className="flex items-end gap-0 mb-6 border-b border-slate-200">
-        {(['items', 'orders'] as const).map((t) => (
+        {(['items', 'orders', 'bowlOptions'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -273,7 +335,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
-            {t === 'items' ? `Menu Items (${items.length})` : `Bestellingen (${orders.length})`}
+            {t === 'items' ? `Menu Items (${items.length})` : t === 'orders' ? `Bestellingen (${orders.length})` : 'Bowl Opties'}
           </button>
         ))}
         <div className="flex-1" />
@@ -582,6 +644,68 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ─────────────────────── BOWL OPTIONS TAB ─────────────────────── */}
+      {tab === 'bowlOptions' && (
+        <div>
+          <h2 className="text-lg font-bold text-slate-800 mb-6">Bowl Builder Opties</h2>
+          
+          {!bowlOptions ? (
+            <p className="text-slate-500">Laden...</p>
+          ) : (
+            <div className="space-y-6">
+              {(['bases', 'proteins', 'mixIns', 'dressings', 'toppings'] as const).map((category) => (
+                <div key={category} className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                  <h3 className="font-semibold text-slate-800 mb-3 capitalize">
+                    {category === 'bases' ? 'Basis' : category === 'proteins' ? 'Eiwitten' : category === 'mixIns' ? 'Mix-ins' : category === 'dressings' ? 'Dressings' : 'Toppings'}
+                  </h3>
+                  
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {(bowlOptions[category] || []).map((item) => (
+                      <div key={item} className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                        <span className="text-sm text-slate-700">{item}</span>
+                        <button
+                          onClick={() => removeBowlOption(category, item)}
+                          disabled={busy === `bowl-${category}-${item}`}
+                          className="text-slate-400 hover:text-red-500 transition-colors p-0.5"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder={`Nieuwe ${category === 'bases' ? 'basis' : category === 'proteins' ? 'eiwit' : category === 'mixIns' ? 'mix-in' : category === 'dressings' ? 'dressing' : 'topping'}...`}
+                      value={selectedBowlCategory === category ? newBowlOption : ''}
+                      onChange={(e) => {
+                        setSelectedBowlCategory(category);
+                        setNewBowlOption(e.target.value);
+                      }}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && selectedBowlCategory === category) {
+                          addBowlOption(category, newBowlOption);
+                        }
+                      }}
+                      className={INP}
+                      onFocus={() => setSelectedBowlCategory(category)}
+                    />
+                    <button
+                      onClick={() => addBowlOption(category, newBowlOption)}
+                      disabled={busy === `bowl-${category}`}
+                      className="px-4 py-2 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 disabled:opacity-50 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

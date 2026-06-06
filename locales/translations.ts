@@ -271,6 +271,16 @@ export const translations = {
     cancel: { nl: 'Annuleren', en: 'Cancel', fr: 'Annuler' },
     save: { nl: 'Opslaan', en: 'Save', fr: 'Enregistrer' },
     saving: { nl: 'Bezig…', en: 'Saving…', fr: 'Enregistrement…' },
+    newBase: { nl: 'Nieuwe basis...', en: 'New base...', fr: 'Nouvelle base...' },
+    newProtein: { nl: 'Nieuwe eiwit...', en: 'New protein...', fr: 'Nouvelle protéine...' },
+    newMixIn: { nl: 'Nieuwe mix-in...', en: 'New mix-in...', fr: 'Nouveau mix-in...' },
+    newDressing: { nl: 'Nieuwe dressing...', en: 'New dressing...', fr: 'Nouvelle sauce...' },
+    newTopping: { nl: 'Nieuwe topping...', en: 'New topping...', fr: 'Nouvelle garniture...' },
+    addBase: { nl: 'Basis toevoegen', en: 'Add base', fr: 'Ajouter une base' },
+    addProtein: { nl: 'Eiwit toevoegen', en: 'Add protein', fr: 'Ajouter une protéine' },
+    addMixIn: { nl: 'Mix-in toevoegen', en: 'Add mix-in', fr: 'Ajouter un mix-in' },
+    addDressing: { nl: 'Dressing toevoegen', en: 'Add dressing', fr: 'Ajouter une sauce' },
+    addTopping: { nl: 'Topping toevoegen', en: 'Add topping', fr: 'Ajouter une garniture' },
   },
 };
 

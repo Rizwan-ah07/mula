@@ -25,7 +25,8 @@ export default async function MenuRoute({ searchParams }: Props) {
   const isValidTable = tableNumber !== null && !isNaN(tableNumber) && tableNumber > 0;
 
   const items   = await getMenuItems();
-  const isAdmin = cookies().get('admin_auth')?.value === process.env.ADMIN_PASSWORD;
+  const adminPass = process.env.ADMIN_PASSWORD;
+  const isAdmin = !!adminPass && cookies().get('admin_auth')?.value === adminPass;
 
   return (
     <main className="min-h-screen">

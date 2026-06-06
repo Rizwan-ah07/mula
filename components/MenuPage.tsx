@@ -229,7 +229,7 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
 
         {/* Bowl builder */}
         {activeTab === 'build' ? (
-          <BowlBuilder onAddToCart={addCustomBowl} onBack={() => setTab('all')} />
+          <BowlBuilder isAdmin={isAdmin} onAddToCart={addCustomBowl} onBack={() => setTab('all')} />
         ) : (
           <>
             <h2 className="text-xl font-bold text-slate-700 mb-3 capitalize">

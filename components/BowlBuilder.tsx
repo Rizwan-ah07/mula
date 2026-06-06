@@ -1,24 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Check, ShoppingBag, ArrowLeft, Plus, Minus, Pencil, BanIcon } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { t } from '@/locales/translations';
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
-const BASES    = ['Witte Rijst', 'Bruine Rijst', 'Sla', 'Mix (Sla & Rijst)'];
-const PROTEINS = ['Crispy Chicken', 'Scampi', 'Zalm'];
-const MIXINS   = [
+let BASES    = ['Witte Rijst', 'Bruine Rijst', 'Sla', 'Mix (Sla & Rijst)'];
+let PROTEINS = ['Crispy Chicken', 'Scampi', 'Zalm'];
+let MIXINS   = [
   'Augurk', 'Ananas', 'Avocado', 'Edamame', 'Fetakaas',
   'Guacamole', 'Kerstomaatjes', 'Komkommer', 'Maïs', 'Mango',
   'Olijven', 'Rode Biet', 'Rode Ui', 'Surimi', 'Wortel', 'Zeewiersalade',
 ];
-const DRESSINGS = [
+let DRESSINGS = [
   'Pokesaus', 'Sesamdressing', 'Sriracha Mayo',
   'Sushisaus', 'Teriake', 'Wasabi Mayo', 'Zoetzuur',
 ];
-const TOPPINGS = [
+let TOPPINGS = [
   'Furikake', 'Gebakken Ui', 'Gedroogde Chili',
   'Jalapeños', 'Gember / Lente Ui', "Masago / Nacho's", 'Noten / Sesam-mix',
 ];
@@ -50,6 +50,7 @@ export interface BowlCartItem {
 interface Props {
   onAddToCart: (item: BowlCartItem) => void;
   onBack:      () => void;
+  isAdmin?:    boolean;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -193,15 +194,61 @@ function CounterChip({ label, count, onAdd, onRemove, isExtra }: {
 
 // ── BowlBuilder ───────────────────────────────────────────────────────────────
 
-export default function BowlBuilder({ onAddToCart, onBack }: Props) {
+export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
   const { language } = useLanguage();
   const [step, setStep] = useState<number>(1);
+  const [bowlOptions, setBowlOptions] = useState<{
+    bases?: string[];
+    proteins?: string[];
+    mixIns?: string[];
+    dressings?: string[];
+    toppings?: string[];
+  } | null>(null);
+
   const [sel, setSel] = useState<Selections>({
     size: null, base: null, protein: null,
     mixIns: {}, mixInsDone: false,
     dressing: null,
     toppings: {}, toppingsDone: false,
   });
+
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [newOption, setNewOption] = useState('');
+
+  // Fetch bowl options on mount
+  useEffect(() => {
+    const fetchBowlOptions = async () => {
+      try {
+        const response = await fetch('/api/bowl-options');
+        const data = await response.json();
+        setBowlOptions(data);
+      } catch (error) {
+        console.error('Error fetching bowl options:', error);
+      }
+    };
+    fetchBowlOptions();
+  }, []);
+
+  async function addCustomOption(category: string, item: string) {
+    if (!item.trim()) return;
+    try {
+      const res = await fetch('/api/bowl-options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, item: item.trim(), action: 'add' }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setBowlOptions(updated);
+        setNewOption('');
+      }
+    } catch (error) {
+      console.error('Error adding bowl option:', error);
+    }
+  }
+
+  // Note: admin-managed bowl options are fetched from the API. Adding/removing
+  // options is restricted to the admin panel; users won't see add controls here.
 
   const STEPS = getSteps(language);
 
@@ -320,35 +367,125 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
       {/* ── Step 2: Base ──────────────────────────────────────────────────── */}
 
       {step === 2 && (
-        <div>
+        <div className="space-y-4">
           <p className="text-sm text-slate-500 mb-4">{t('builder.steps.baseDesc', language)}</p>
           <div className="grid grid-cols-2 gap-2.5">
-            {BASES.map((b) => (
+            {(bowlOptions?.bases || BASES).map((b) => (
               <Chip key={b} label={b} selected={sel.base === b}
                 onClick={() => setSel((p) => ({ ...p, base: b }))} />
             ))}
           </div>
+          
+          {/* Add custom base */}
+          {isAdmin && (
+            selectedCategory === 'bases' ? (
+              <div className="flex gap-2 mt-3">
+                <input
+                  type="text"
+                  placeholder={t('menuCard.newBase', language)}
+                  value={newOption}
+                  onChange={(e) => setNewOption(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      addCustomOption('bases', newOption);
+                      setSelectedCategory(null);
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm"
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
+                    addCustomOption('bases', newOption);
+                    setSelectedCategory(null);
+                  }}
+                  className="px-3 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium"
+                >
+                  {t('admin.save', language)}
+                </button>
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm"
+                >
+                  {t('admin.cancel', language)}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setSelectedCategory('bases')}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border-2 border-dashed border-slate-300 text-slate-600 hover:border-brand-400 hover:text-brand-600 font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {t('menuCard.addBase', language)}
+              </button>
+            )
+          )}
         </div>
       )}
 
       {/* ── Step 3: Protein ───────────────────────────────────────────────── */}
 
       {step === 3 && (
-        <div>
+        <div className="space-y-4">
           <p className="text-sm text-slate-500 mb-4">{t('builder.steps.proteinDesc', language)}</p>
           <div className="grid grid-cols-2 gap-2.5">
-            {PROTEINS.map((pr) => (
+            {(bowlOptions?.proteins || PROTEINS).map((pr) => (
               <Chip key={pr} label={pr} selected={sel.protein === pr}
                 onClick={() => setSel((p) => ({ ...p, protein: pr }))} />
             ))}
           </div>
+
+          {/* Add custom protein */}
+          {isAdmin && (
+            selectedCategory === 'proteins' ? (
+              <div className="flex gap-2 mt-3">
+                <input
+                  type="text"
+                  placeholder={t('menuCard.newProtein', language)}
+                  value={newOption}
+                  onChange={(e) => setNewOption(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      addCustomOption('proteins', newOption);
+                      setSelectedCategory(null);
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm"
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
+                    addCustomOption('proteins', newOption);
+                    setSelectedCategory(null);
+                  }}
+                  className="px-3 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium"
+                >
+                  {t('admin.save', language)}
+                </button>
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm"
+                >
+                  {t('admin.cancel', language)}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setSelectedCategory('proteins')}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border-2 border-dashed border-slate-300 text-slate-600 hover:border-brand-400 hover:text-brand-600 font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {t('menuCard.addProtein', language)}
+              </button>
+            )
+          )}
         </div>
       )}
 
       {/* ── Step 4: Mix-ins ───────────────────────────────────────────────── */}
 
       {step === 4 && (
-        <div>
+        <div className="space-y-4">
           {/* Counter header */}
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-slate-500">
@@ -368,7 +505,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {MIXINS.map((m) => (
+            {(bowlOptions?.mixIns || MIXINS).map((m) => (
               <CounterChip
                 key={m} label={m}
                 count={sel.mixIns[m] ?? 0}
@@ -381,11 +518,56 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
             ))}
           </div>
 
+          {/* Add custom mix-in */}
+          {isAdmin && (
+            selectedCategory === 'mixIns' ? (
+              <div className="flex gap-2 mt-3">
+                <input
+                  type="text"
+                  placeholder={t('menuCard.newMixIn', language)}
+                  value={newOption}
+                  onChange={(e) => setNewOption(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      addCustomOption('mixIns', newOption);
+                      setSelectedCategory(null);
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm"
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
+                    addCustomOption('mixIns', newOption);
+                    setSelectedCategory(null);
+                  }}
+                  className="px-3 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium"
+                >
+                  {t('admin.save', language)}
+                </button>
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm"
+                >
+                  {t('admin.cancel', language)}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setSelectedCategory('mixIns')}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border-2 border-dashed border-slate-300 text-slate-600 hover:border-brand-400 hover:text-brand-600 font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {t('menuCard.addMixIn', language)}
+              </button>
+            )
+          )}
+
           {/* "Niets meer" — shows when partially filled and not yet done */}
           {totalMixIns > 0 && totalMixIns < mixInLimit && (
             <button
               onClick={() => setSel((p) => ({ ...p, mixInsDone: !p.mixInsDone }))}
-              className={`mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm
+              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm
                           font-medium transition-all ${
                 sel.mixInsDone
                   ? 'bg-slate-700 border-slate-700 text-white'
@@ -402,21 +584,66 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
       {/* ── Step 5: Dressing ──────────────────────────────────────────────── */}
 
       {step === 5 && (
-        <div>
+        <div className="space-y-4">
           <p className="text-sm text-slate-500 mb-4">{t('builder.steps.dressingDesc', language)}</p>
           <div className="grid grid-cols-2 gap-2.5">
-            {DRESSINGS.map((d) => (
+            {(bowlOptions?.dressings || DRESSINGS).map((d) => (
               <Chip key={d} label={d} selected={sel.dressing === d}
                 onClick={() => setSel((p) => ({ ...p, dressing: d }))} />
             ))}
           </div>
+
+          {/* Add custom dressing */}
+          {isAdmin && (
+            selectedCategory === 'dressings' ? (
+              <div className="flex gap-2 mt-3">
+                <input
+                  type="text"
+                  placeholder={t('menuCard.newDressing', language)}
+                  value={newOption}
+                  onChange={(e) => setNewOption(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      addCustomOption('dressings', newOption);
+                      setSelectedCategory(null);
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm"
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
+                    addCustomOption('dressings', newOption);
+                    setSelectedCategory(null);
+                  }}
+                  className="px-3 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium"
+                >
+                  {t('admin.save', language)}
+                </button>
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm"
+                >
+                  {t('admin.cancel', language)}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setSelectedCategory('dressings')}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border-2 border-dashed border-slate-300 text-slate-600 hover:border-brand-400 hover:text-brand-600 font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {t('menuCard.addDressing', language)}
+              </button>
+            )
+          )}
         </div>
       )}
 
       {/* ── Step 6: Toppings ──────────────────────────────────────────────── */}
 
       {step === 6 && (
-        <div>
+        <div className="space-y-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-slate-500">
               {t('builder.steps.toppingsDesc', language)}
@@ -435,7 +662,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
-            {TOPPINGS.map((t) => (
+            {(bowlOptions?.toppings || TOPPINGS).map((t) => (
               <CounterChip
                 key={t} label={t}
                 count={sel.toppings[t] ?? 0}
@@ -448,11 +675,56 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
             ))}
           </div>
 
+          {/* Add custom topping */}
+          {isAdmin && (
+            selectedCategory === 'toppings' ? (
+              <div className="flex gap-2 mt-3">
+                <input
+                  type="text"
+                  placeholder={t('menuCard.newTopping', language)}
+                  value={newOption}
+                  onChange={(e) => setNewOption(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      addCustomOption('toppings', newOption);
+                      setSelectedCategory(null);
+                    }
+                  }}
+                  className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm"
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
+                    addCustomOption('toppings', newOption);
+                    setSelectedCategory(null);
+                  }}
+                  className="px-3 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium"
+                >
+                  {t('admin.save', language)}
+                </button>
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="px-3 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm"
+                >
+                  {t('admin.cancel', language)}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setSelectedCategory('toppings')}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border-2 border-dashed border-slate-300 text-slate-600 hover:border-brand-400 hover:text-brand-600 font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {t('menuCard.addTopping', language)}
+              </button>
+            )
+          )}
+
           {/* "Niets meer" for toppings */}
           {totalToppings > 0 && totalToppings < 3 && (
             <button
               onClick={() => setSel((p) => ({ ...p, toppingsDone: !p.toppingsDone }))}
-              className={`mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm
+              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm
                           font-medium transition-all ${
                 sel.toppingsDone
                   ? 'bg-slate-700 border-slate-700 text-white'
@@ -562,7 +834,7 @@ export default function BowlBuilder({ onAddToCart, onBack }: Props) {
                        font-bold px-6 py-3 rounded-2xl transition-all shadow-md
                        disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {step === 6 ? t('builder.summary', language) : t('builder.next', language)}
+            {step === 6 ? t('builder.done', language) : t('builder.next', language)}
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

@@ -36,3 +36,60 @@
     @apply bg-white rounded-2xl shadow-sm border border-slate-100;
   }
 }
+
+/* Surface Studio 1st gen */
+@media screen and (min-width: 2240px) and (max-width: 2260px) and (min-height: 1490px) and (max-height: 1510px) {
+  html {
+    font-size: 17px;
+  }
+
+  .max-w-3xl {
+    max-width: 56rem;
+  }
+
+  .max-w-4xl {
+    max-width: 64rem;
+  }
+
+  .max-w-5xl {
+    max-width: 72rem;
+  }
+}
+
+/* Surface Studio 2 */
+@media screen and (min-width: 2254px) and (max-width: 2268px) and (min-height: 1500px) and (max-height: 1512px) {
+  html {
+    font-size: 17px;
+  }
+
+  .max-w-3xl {
+    max-width: 56rem;
+  }
+
+  .max-w-4xl {
+    max-width: 64rem;
+  }
+
+  .max-w-5xl {
+    max-width: 72rem;
+  }
+}
+
+/* Surface Studio 2+ */
+@media screen and (min-width: 2254px) and (max-width: 2268px) and (min-height: 1500px) and (max-height: 1512px) {
+  html {
+    font-size: 17px;
+  }
+
+  .max-w-3xl {
+    max-width: 56rem;
+  }
+
+  .max-w-4xl {
+    max-width: 64rem;
+  }
+
+  .max-w-5xl {
+    max-width: 72rem;
+  }
+}

@@ -22,7 +22,7 @@ export default function Cart({
 }: Props) {
   const { language } = useLanguage();
   const [notes,   setNotes]   = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error,   setError]   = useState('');
 
@@ -59,31 +59,36 @@ export default function Cart({
   }
 
   async function handleSubmit() {
-    if (!checkoutInfo) return;
-    setLoading(true);
+    if (!checkoutInfo || isSubmitting) return;
+    setIsSubmitting(true);
     setError('');
 
-    const result = await submitOrder({
-      checkoutInfo,
-      items: cart.map((item) => ({
-        menuItemId: item._id,
-        name:       item.selectedSize
-                      ? `${item.name} (${item.selectedSize})`
-                      : item.name,
-        price:      item.price,
-        quantity:   item.quantity,
-        itemNotes:  getItemNotes(item),
-      })),
-      notes,
-    });
+    try {
+      const result = await submitOrder({
+        checkoutInfo,
+        items: cart.map((item) => ({
+          menuItemId: item._id,
+          name:       item.selectedSize
+                        ? `${item.name} (${item.selectedSize})`
+                        : item.name,
+          price:      item.price,
+          quantity:   item.quantity,
+          itemNotes:  getItemNotes(item),
+        })),
+        notes,
+      });
 
-    setLoading(false);
-
-    if (result.success) {
-      setSuccess(true);
-      setTimeout(onOrderPlaced, 2000);
-    } else {
-      setError(result.error ?? 'Er ging iets mis. Probeer het opnieuw.');
+      if (result.success) {
+        setSuccess(true);
+        setTimeout(onOrderPlaced, 2000);
+      } else {
+        setError(result.error ?? 'Er ging iets mis. Probeer het opnieuw.');
+      }
+    } catch (err) {
+      console.error('[Cart.handleSubmit]', err);
+      setError('Er is een onverwachte fout opgetreden.');
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -216,10 +221,10 @@ export default function Cart({
 
               <button
                 onClick={handleSubmit}
-                disabled={!checkoutInfo || loading || belowDeliveryMin}
+                disabled={!checkoutInfo || isSubmitting || belowDeliveryMin}
                 className="btn-primary w-full text-base py-3"
               >
-                {loading
+                {isSubmitting
                   ? t('cart.placing', language)
                   : checkoutInfo?.serviceType === 'delivery'
                   ? t('cart.placeDelivery', language)

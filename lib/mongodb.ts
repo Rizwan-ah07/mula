@@ -14,28 +14,26 @@ const options = {
   socketTimeoutMS: 45000,
 };
 
-let clientPromise: Promise<MongoClient>;
+// Use a global variable to preserve the MongoClient promise across module reloads
+// caused by HMR in development and across warm lambda invocations in production.
+const globalWithMongo = global as typeof globalThis & {
+  _mongoClientPromise?: Promise<MongoClient>;
+};
 
-if (process.env.NODE_ENV === 'development') {
-  // In development mode, use a global variable so that the value
-  // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  const globalWithMongo = global as typeof globalThis & {
-    _mongoClientPromise?: Promise<MongoClient>;
-  };
-
-  if (!globalWithMongo._mongoClientPromise) {
-    const client = new MongoClient(uri, options);
-    globalWithMongo._mongoClientPromise = client.connect();
-    console.log('[mongo] Created new global client promise (Dev)');
-  }
-  clientPromise = globalWithMongo._mongoClientPromise;
-} else {
-  // In production mode, it's best to not use a global variable.
-  // Each serverless function invocation will use this module-scoped promise.
+if (!globalWithMongo._mongoClientPromise) {
   const client = new MongoClient(uri, options);
-  clientPromise = client.connect();
-  console.log('[mongo] Created new client promise (Prod)');
+  globalWithMongo._mongoClientPromise = client.connect()
+    .then((client) => {
+      console.log('[mongo] Successfully connected to MongoDB');
+      return client;
+    })
+    .catch((err) => {
+      console.error('[mongo] Failed to connect to MongoDB:', err);
+      throw err;
+    });
 }
+
+const clientPromise = globalWithMongo._mongoClientPromise;
 
 export { clientPromise };
 

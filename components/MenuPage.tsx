@@ -56,7 +56,7 @@ interface Props {
 export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
   const { language } = useLanguage();
   const [cart,           setCart]           = useState<CartItem[]>([]);
-  const [activeTab,      setTab]            = useState<Tab>('all');
+  const [activeTab,      setTab]            = useState<Tab>('build');
   const [cartOpen,       setCartOpen]       = useState(false);
   const [checkoutInfo,   setCheckoutInfo]   = useState<CheckoutInfo | null>(null);
   const [showModal,      setShowModal]      = useState(false);
@@ -167,10 +167,13 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
 
   // ── Derived ───────────────────────────────────────────────────────────────
 
+  const CAT_ORDER: Record<string, number> = { poke: 0, puree: 1, sides: 2, drinks: 3 };
+  const sorted = [...items].sort((a, b) => (CAT_ORDER[a.category] ?? 99) - (CAT_ORDER[b.category] ?? 99));
+
   const filtered =
     activeTab === 'all' || activeTab === 'build'
-      ? items
-      : items.filter((i) => i.category === activeTab);
+      ? sorted
+      : sorted.filter((i) => i.category === activeTab);
 
   const cartTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0);

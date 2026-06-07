@@ -8,10 +8,11 @@ if (!uri) {
 }
 
 const options = {
-  maxPoolSize: 1, // Reduced for serverless to prevent connection exhaustion on Atlas Free Tier
-  connectTimeoutMS: 10000,
-  serverSelectionTimeoutMS: 15000,
+  maxPoolSize: 10, // Increased to allow concurrent operations within the same warm lambda
+  connectTimeoutMS: 30000, // Increased for better resilience
+  serverSelectionTimeoutMS: 30000, // Increased for better resilience
   socketTimeoutMS: 45000,
+  family: 4, // Force IPv4 to prevent connectivity issues in some serverless environments
 };
 
 // Use a global variable to preserve the MongoClient promise across module reloads

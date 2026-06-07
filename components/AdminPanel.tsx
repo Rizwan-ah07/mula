@@ -295,6 +295,9 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
 
   // ── Derived ───────────────────────────────────────────────────────────────
 
+  const catOrder: Record<string, number> = { poke: 0, puree: 1, sides: 2, drinks: 3 };
+  const sortedItems = [...items].sort((a, b) => (catOrder[a.category] ?? 99) - (catOrder[b.category] ?? 99));
+
   const visibleOrders = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -379,7 +382,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
 
           {/* Items list */}
           <div className="space-y-2">
-            {items.map((item) =>
+            {sortedItems.map((item) =>
               editId === item._id ? (
                 <div key={item._id} className="border border-brand-200 rounded-2xl p-4 bg-white shadow-sm">
                   <p className="text-xs font-semibold text-brand-600 mb-3 uppercase tracking-wide">

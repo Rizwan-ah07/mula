@@ -7,40 +7,39 @@ if (!uri) {
   throw new Error('Missing MONGODB_URI environment variable. Define it in your .env file.');
 }
 
-declare global {
-  // eslint-disable-next-line no-var
-  var _mongoClientPromise: Promise<MongoClient> | undefined;
-}
-
-const globalForMongo = globalThis as typeof globalThis & {
-  _mongoClientPromise?: Promise<MongoClient>;
+const options = {
+  maxPoolSize: 1, // Reduced for serverless to prevent connection exhaustion on Atlas Free Tier
+  connectTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 15000,
+  socketTimeoutMS: 45000,
 };
 
-if (!globalForMongo._mongoClientPromise) {
-  const connectStart = Date.now();
-  // create client and connect, with logging for Vercel logs to inspect timings
-  globalForMongo._mongoClientPromise = new MongoClient(uri, {
-    maxPoolSize:              10,
-    // fail faster in serverless environments so timeouts are observed in logs
-    connectTimeoutMS:        10000,
-    serverSelectionTimeoutMS: 15000,
-    socketTimeoutMS:          45000,
-  }).connect()
-    .then((client) => {
-      console.log(`[mongo] connected in ${Date.now() - connectStart}ms`);
-      return client;
-    })
-    .catch((err) => {
-      console.error(`[mongo] connect failed after ${Date.now() - connectStart}ms`, err);
-      throw err;
-    });
+let clientPromise: Promise<MongoClient>;
+
+if (process.env.NODE_ENV === 'development') {
+  // In development mode, use a global variable so that the value
+  // is preserved across module reloads caused by HMR (Hot Module Replacement).
+  const globalWithMongo = global as typeof globalThis & {
+    _mongoClientPromise?: Promise<MongoClient>;
+  };
+
+  if (!globalWithMongo._mongoClientPromise) {
+    const client = new MongoClient(uri, options);
+    globalWithMongo._mongoClientPromise = client.connect();
+    console.log('[mongo] Created new global client promise (Dev)');
+  }
+  clientPromise = globalWithMongo._mongoClientPromise;
+} else {
+  // In production mode, it's best to not use a global variable.
+  // Each serverless function invocation will use this module-scoped promise.
+  const client = new MongoClient(uri, options);
+  clientPromise = client.connect();
+  console.log('[mongo] Created new client promise (Prod)');
 }
 
-export const clientPromise = globalForMongo._mongoClientPromise;
+export { clientPromise };
 
 export async function getDb(): Promise<Db> {
-  const start = Date.now();
   const client = await clientPromise;
-  console.log(`[mongo] getDb awaited ${Date.now() - start}ms`);
   return client.db(dbName);
 }

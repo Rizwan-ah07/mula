@@ -28,7 +28,12 @@ export async function GET(req: Request) {
 
       const onAbort = async () => {
         await changeStream.close();
-        controller.close();
+        try {
+          // Check if controller is still open before closing
+          controller.close();
+        } catch (e) {
+          // Ignore "Controller is already closed" errors
+        }
       };
 
       req.signal.addEventListener('abort', onAbort);
@@ -37,20 +42,28 @@ export async function GET(req: Request) {
         const document = change.fullDocument;
         if (!document) return;
 
-        controller.enqueue(
-          sse('order_change', {
-            operationType: change.operationType,
-            order: {
-              ...document,
-              _id: document._id.toString(),
-            },
-          })
-        );
+        try {
+          controller.enqueue(
+            sse('order_change', {
+              operationType: change.operationType,
+              order: {
+                ...document,
+                _id: document._id.toString(),
+              },
+            })
+          );
+        } catch (e) {
+          // Connection likely closed
+        }
       });
 
       changeStream.on('error', async () => {
         await changeStream.close();
-        controller.close();
+        try {
+          controller.close();
+        } catch (e) {
+          // Ignore
+        }
       });
     },
     async cancel() {

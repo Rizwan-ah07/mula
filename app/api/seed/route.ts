@@ -6,7 +6,7 @@ const SEED_ITEMS: Omit<IMenuItem, '_id' | 'available' | 'createdAt' | 'updatedAt
   // ── Poke Bowls ─────────────────────────────────────────────────────────────
   {
     name: 'Classic Ahi Poke',
-    price: 14.5,
+    price: 13.0,
     description: {
       nl: 'Verse ahi tonijn, sojasaus, sesamolie, groene ui, zeewier.',
       en: 'Fresh ahi tuna, soy sauce, sesame oil, green onion, seaweed.',
@@ -15,6 +15,10 @@ const SEED_ITEMS: Omit<IMenuItem, '_id' | 'available' | 'createdAt' | 'updatedAt
     category: 'poke',
     image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
     ingredients: ['Ahi Tuna', 'Soy Sauce', 'Sesame Oil', 'Green Onion', 'Seaweed'],
+    sizes: [
+      { label: 'Medium', price: 13.0 },
+      { label: 'Large',  price: 15.5 },
+    ],
   },
   {
     name: 'Spicy Salmon Bowl',
@@ -27,10 +31,14 @@ const SEED_ITEMS: Omit<IMenuItem, '_id' | 'available' | 'createdAt' | 'updatedAt
     category: 'poke',
     image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600',
     ingredients: ['Salmon', 'Spicy Mayo', 'Cucumber', 'Avocado', 'Tobiko'],
+    sizes: [
+      { label: 'Medium', price: 13.5 },
+      { label: 'Large',  price: 16.0 },
+    ],
   },
   {
     name: 'Tropical Shrimp Bowl',
-    price: 12.0,
+    price: 11.0,
     description: {
       nl: 'Tempura scampi, mango salsa, kokosrijst, limoen dressing.',
       en: 'Tempura shrimp, mango salsa, coconut rice, lime dressing.',
@@ -39,6 +47,10 @@ const SEED_ITEMS: Omit<IMenuItem, '_id' | 'available' | 'createdAt' | 'updatedAt
     category: 'poke',
     image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=600',
     ingredients: ['Tempura Shrimp', 'Mango', 'Coconut Rice', 'Lime'],
+    sizes: [
+      { label: 'Medium', price: 11.0 },
+      { label: 'Large',  price: 13.5 },
+    ],
   },
   // ── Puree Bowls ────────────────────────────────────────────────────────────
   {

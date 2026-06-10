@@ -31,7 +31,8 @@ interface Selections {
   protein:      string | null;
   mixIns:       Record<string, number>;   // item → count, duplicates allowed
   mixInsDone:   boolean;                  // "Niets meer" clicked
-  dressing:     string | null;
+  dressing:     Record<string, number>;   // item → count
+  dressingDone: boolean;
   toppings:     Record<string, number>;   // item → count, duplicates allowed
   toppingsDone: boolean;
 }
@@ -80,11 +81,12 @@ function formatCountMap(map: Record<string, number>): string {
 }
 
 function calcPrice(sel: Selections): number {
-  const base         = sel.size === 'Large' ? 13.5 : 11.0;
-  const mixInLimit   = sel.size === 'Large' ? 5 : 4;
-  const extraMixIns  = Math.max(0, sumMap(sel.mixIns)  - mixInLimit);
-  const extraToppings = Math.max(0, sumMap(sel.toppings) - 3);
-  return base + extraMixIns + extraToppings;
+  const base          = sel.size === 'Large' ? 13.5 : 11.0;
+  const mixInLimit    = sel.size === 'Large' ? 5 : 4;
+  const extraMixIns   = Math.max(0, sumMap(sel.mixIns)  - mixInLimit);
+  const extraToppings  = Math.max(0, sumMap(sel.toppings) - 1);
+  const extraDressings = Math.max(0, sumMap(sel.dressing) - 1);
+  return base + (extraMixIns * 1.0) + (extraToppings * 1.0) + (extraDressings * 1.0);
 }
 
 // ── Step meta ─────────────────────────────────────────────────────────────────
@@ -126,7 +128,7 @@ function SizeCard({ label, price, mixIns, selected, onClick, language }: {
   );
 }
 
-/** Single-select chip (Base, Protein, Dressing) */
+/** Single-select chip (Base, Protein) */
 function Chip({ label, selected, onClick }: {
   label: string; selected: boolean; onClick: () => void;
 }) {
@@ -147,20 +149,19 @@ function Chip({ label, selected, onClick }: {
 }
 
 /**
- * Counter chip for mix-ins and toppings.
- * When count = 0 → simple add button.
- * When count > 0 → −/count/+ row, always addable (extras cost €1).
+ * Counter chip for mix-ins, toppings, and sauces.
  */
-function CounterChip({ label, count, onAdd, onRemove, isExtra }: {
-  label: string; count: number; onAdd: () => void; onRemove: () => void; isExtra: boolean;
+function CounterChip({ label, count, onAdd, onRemove, isExtra, disabledAdd }: {
+  label: string; count: number; onAdd: () => void; onRemove: () => void; isExtra: boolean; disabledAdd?: boolean;
 }) {
   if (count === 0) {
     return (
       <button
         onClick={onAdd}
+        disabled={disabledAdd}
         className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-200
                    bg-white text-slate-700 text-sm font-medium hover:border-brand-400 hover:bg-brand-50
-                   transition-all w-full"
+                   transition-all w-full disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <span className="truncate">{label}</span>
         <Plus className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
@@ -183,8 +184,9 @@ function CounterChip({ label, count, onAdd, onRemove, isExtra }: {
       </span>
       <button
         onClick={onAdd}
+        disabled={disabledAdd}
         className="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-lg
-                   bg-white/20 hover:bg-white/30 transition-colors"
+                   bg-white/20 hover:bg-white/30 transition-colors disabled:opacity-40"
       >
         <Plus className="w-3.5 h-3.5 text-white" />
       </button>
@@ -208,7 +210,7 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
   const [sel, setSel] = useState<Selections>({
     size: null, base: null, protein: null,
     mixIns: {}, mixInsDone: false,
-    dressing: null,
+    dressing: {}, dressingDone: false,
     toppings: {}, toppingsDone: false,
   });
 
@@ -247,19 +249,20 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
     }
   }
 
-  // Note: admin-managed bowl options are fetched from the API. Adding/removing
-  // options is restricted to the admin panel; users won't see add controls here.
-
   const STEPS = getSteps(language);
 
-  const mixInLimit    = sel.size === 'Large' ? 5 : 4;
-  const totalMixIns   = sumMap(sel.mixIns);
-  const totalToppings = sumMap(sel.toppings);
-  const extraMixIns   = Math.max(0, totalMixIns  - mixInLimit);
-  const extraToppings = Math.max(0, totalToppings - 3);
-  const currentPrice  = calcPrice(sel);
-  const isSummary     = step === 7;
-  const currentMeta   = STEPS[step - 1];
+  const mixInLimit     = sel.size === 'Large' ? 5 : 4;
+  const totalMixIns    = sumMap(sel.mixIns);
+  const totalToppings  = sumMap(sel.toppings);
+  const totalDressings = sumMap(sel.dressing);
+  
+  const extraMixIns    = Math.max(0, totalMixIns  - mixInLimit);
+  const extraToppings   = Math.max(0, totalToppings - 1);
+  const extraDressings  = Math.max(0, totalDressings - 1);
+  
+  const currentPrice   = calcPrice(sel);
+  const isSummary      = step === 7;
+  const currentMeta    = STEPS[step - 1];
 
   // ── Validation ────────────────────────────────────────────────────────────
 
@@ -268,8 +271,8 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
     if (step === 2) return sel.base !== null;
     if (step === 3) return sel.protein !== null;
     if (step === 4) return totalMixIns >= 1 && (totalMixIns >= mixInLimit || sel.mixInsDone);
-    if (step === 5) return sel.dressing !== null;
-    if (step === 6) return totalToppings >= 1 && (totalToppings >= 3 || sel.toppingsDone);
+    if (step === 5) return totalDressings >= 1 && (totalDressings >= 1 || sel.dressingDone);
+    if (step === 6) return totalToppings >= 1 && (totalToppings >= 1 || sel.toppingsDone);
     return false;
   }
 
@@ -278,14 +281,15 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
   function handleAddToCart() {
     const price = currentPrice;
     const extras: string[] = [];
-    if (extraMixIns > 0)   extras.push(`+${extraMixIns} extra mix-in${extraMixIns > 1 ? 's' : ''}`);
-    if (extraToppings > 0) extras.push(`+${extraToppings} extra topping${extraToppings > 1 ? 's' : ''}`);
+    if (extraMixIns > 0)    extras.push(`+${extraMixIns} extra mix-in${extraMixIns > 1 ? 's' : ''}`);
+    if (extraToppings > 0)  extras.push(`+${extraToppings} extra topping${extraToppings > 1 ? 's' : ''}`);
+    if (extraDressings > 0) extras.push(`+${extraDressings} extra saus`);
 
     const notes = [
       `Basis: ${sel.base}`,
       `Eiwit: ${sel.protein}`,
       `Mix-ins: ${formatCountMap(sel.mixIns)}`,
-      `Dressing: ${sel.dressing}`,
+      `Dressing: ${formatCountMap(sel.dressing)}`,
       `Toppings: ${formatCountMap(sel.toppings)}`,
       ...(extras.length > 0 ? [`Extra: ${extras.join(', ')}`] : []),
     ].join(' · ');
@@ -306,7 +310,7 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
 
   const progress = ((step - 1) / 6) * 100;
   const priceLabel = sel.size
-    ? `€${currentPrice.toFixed(2)}${extraMixIns > 0 || extraToppings > 0 ? ' (+extra)' : ''}`
+    ? `€${currentPrice.toFixed(2)}${extraMixIns > 0 || extraToppings > 0 || extraDressings > 0 ? ' (+extra)' : ''}`
     : '';
 
   return (
@@ -342,7 +346,7 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
         </div>
         <div className="flex justify-between mt-1 text-xs text-slate-400">
           <span>{isSummary ? t('builder.done', language) : `${t('builder.step', language)} ${step} ${t('builder.of', language)} 6`}</span>
-          <span className={extraMixIns > 0 || extraToppings > 0 ? 'text-coral-600 font-semibold' : ''}>
+          <span className={extraMixIns > 0 || extraToppings > 0 || extraDressings > 0 ? 'text-coral-600 font-semibold' : ''}>
             {priceLabel}
           </span>
         </div>
@@ -486,7 +490,6 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
 
       {step === 4 && (
         <div className="space-y-4">
-          {/* Counter header */}
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-slate-500">
               {t('builder.steps.mixInsDesc', language)}
@@ -518,7 +521,6 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
             ))}
           </div>
 
-          {/* Add custom mix-in */}
           {isAdmin && (
             selectedCategory === 'mixIns' ? (
               <div className="flex gap-2 mt-3">
@@ -563,7 +565,6 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
             )
           )}
 
-          {/* "Niets meer" — shows when partially filled and not yet done */}
           {totalMixIns > 0 && totalMixIns < mixInLimit && (
             <button
               onClick={() => setSel((p) => ({ ...p, mixInsDone: !p.mixInsDone }))}
@@ -585,15 +586,37 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
 
       {step === 5 && (
         <div className="space-y-4">
-          <p className="text-sm text-slate-500 mb-4">{t('builder.steps.dressingDesc', language)}</p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-slate-500">
+              {t('builder.steps.dressingDesc', language)}
+              <span className="text-xs text-slate-400 ml-1">({t('builder.steps.extraCost', language)})</span>
+            </p>
+            <span className={`text-sm font-bold px-3 py-0.5 rounded-full transition-colors ${
+              totalDressings > 1
+                ? 'bg-coral-100 text-coral-700'
+                : totalDressings >= 1
+                ? 'bg-brand-100 text-brand-700'
+                : 'bg-slate-100 text-slate-600'
+            }`}>
+              {totalDressings} / 1
+              {extraDressings > 0 && ` (+€${extraDressings.toFixed(2)})`}
+            </span>
+          </div>
+
           <div className="grid grid-cols-2 gap-2.5">
             {(bowlOptions?.dressings || DRESSINGS).map((d) => (
-              <Chip key={d} label={d} selected={sel.dressing === d}
-                onClick={() => setSel((p) => ({ ...p, dressing: d }))} />
+              <CounterChip
+                key={d} label={d}
+                count={sel.dressing[d] ?? 0}
+                isExtra={totalDressings > 1 && (sel.dressing[d] ?? 0) > 0
+                           ? (sumMap(sel.dressing) - (sel.dressing[d] ?? 0)) >= 1
+                           : false}
+                onAdd={()    => setSel((p) => ({ ...p, dressing: addToMap(p.dressing, d), dressingDone: false }))}
+                onRemove={() => setSel((p) => ({ ...p, dressing: removeFromMap(p.dressing, d) }))}
+              />
             ))}
           </div>
 
-          {/* Add custom dressing */}
           {isAdmin && (
             selectedCategory === 'dressings' ? (
               <div className="flex gap-2 mt-3">
@@ -637,6 +660,21 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
               </button>
             )
           )}
+
+          {totalDressings > 0 && totalDressings < 1 && (
+            <button
+              onClick={() => setSel((p) => ({ ...p, dressingDone: !p.dressingDone }))}
+              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm
+                          font-medium transition-all ${
+                sel.dressingDone
+                  ? 'bg-slate-700 border-slate-700 text-white'
+                  : 'bg-slate-50 border-dashed border-slate-300 text-slate-500 hover:bg-slate-100'
+              }`}
+            >
+              <BanIcon className="w-4 h-4" />
+              {sel.dressingDone ? t('builder.steps.noMoreCancel', language) : t('builder.steps.noMore', language)}
+            </button>
+          )}
         </div>
       )}
 
@@ -647,17 +685,17 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-slate-500">
               {t('builder.steps.toppingsDesc', language)}
-              <span className="text-xs text-slate-400 ml-1">({t('builder.steps.toppingsExtra', language)})</span>
+              <span className="text-xs text-slate-400 ml-1">({t('builder.steps.extraCost', language)})</span>
             </p>
             <span className={`text-sm font-bold px-3 py-0.5 rounded-full transition-colors ${
-              totalToppings > 3
+              totalToppings > 1
                 ? 'bg-coral-100 text-coral-700'
-                : totalToppings >= 3
+                : totalToppings >= 1
                 ? 'bg-brand-100 text-brand-700'
                 : 'bg-slate-100 text-slate-600'
             }`}>
-              {totalToppings} / 3
-              {extraToppings > 0 && ` (+€${extraToppings})`}
+              {totalToppings} / 1
+              {extraToppings > 0 && ` (+€${extraToppings.toFixed(2)})`}
             </span>
           </div>
 
@@ -666,8 +704,8 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
               <CounterChip
                 key={t} label={t}
                 count={sel.toppings[t] ?? 0}
-                isExtra={totalToppings > 3 && (sel.toppings[t] ?? 0) > 0
-                           ? (sumMap(sel.toppings) - (sel.toppings[t] ?? 0)) >= 3
+                isExtra={totalToppings > 1 && (sel.toppings[t] ?? 0) > 0
+                           ? (sumMap(sel.toppings) - (sel.toppings[t] ?? 0)) >= 1
                            : false}
                 onAdd={()    => setSel((p) => ({ ...p, toppings: addToMap(p.toppings, t), toppingsDone: false }))}
                 onRemove={() => setSel((p) => ({ ...p, toppings: removeFromMap(p.toppings, t) }))}
@@ -675,7 +713,6 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
             ))}
           </div>
 
-          {/* Add custom topping */}
           {isAdmin && (
             selectedCategory === 'toppings' ? (
               <div className="flex gap-2 mt-3">
@@ -720,8 +757,7 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
             )
           )}
 
-          {/* "Niets meer" for toppings */}
-          {totalToppings > 0 && totalToppings < 3 && (
+          {totalToppings > 0 && totalToppings < 1 && (
             <button
               onClick={() => setSel((p) => ({ ...p, toppingsDone: !p.toppingsDone }))}
               className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm
@@ -742,8 +778,7 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
 
       {isSummary && (
         <div className="space-y-4">
-          {/* Price breakdown */}
-          {(extraMixIns > 0 || extraToppings > 0) && (
+          {(extraMixIns > 0 || extraToppings > 0 || extraDressings > 0) && (
             <div className="bg-coral-50 border border-coral-200 rounded-2xl px-4 py-3 space-y-1">
               <p className="text-sm font-bold text-coral-700">{t('builder.summary.priceBreakdown', language)}</p>
               <div className="flex justify-between text-sm text-coral-700">
@@ -754,6 +789,12 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
                 <div className="flex justify-between text-sm text-coral-700">
                   <span>{extraMixIns} {extraMixIns === 1 ? t('builder.summary.extraMixIn', language) : t('builder.summary.extraMixIns', language)}</span>
                   <span>+€{extraMixIns.toFixed(2)}</span>
+                </div>
+              )}
+              {extraDressings > 0 && (
+                <div className="flex justify-between text-sm text-coral-700">
+                  <span>{extraDressings} {extraDressings === 1 ? 'extra saus' : 'extra sauzen'}</span>
+                  <span>+€{extraDressings.toFixed(2)}</span>
                 </div>
               )}
               {extraToppings > 0 && (
@@ -769,14 +810,13 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
             </div>
           )}
 
-          {/* Selections with edit buttons */}
           <div className="card p-1 overflow-hidden">
             {([
-              { label: t('builder.summary.size', language), value: `${sel.size} · ${t('builder.summary.baseBowl', language).toLowerCase()} €${sel.size === 'Large' ? '13.50' : '11.00'}`, targetStep: 1 },
+              { label: t('builder.summary.size', language), value: `${sel.size} · €${sel.size === 'Large' ? '13.50' : '11.00'}`, targetStep: 1 },
               { label: t('builder.summary.base', language), value: sel.base!, targetStep: 2 },
               { label: t('builder.summary.protein', language), value: sel.protein!, targetStep: 3 },
               { label: t('builder.summary.mixIns', language), value: formatCountMap(sel.mixIns), targetStep: 4 },
-              { label: t('builder.summary.dressing', language), value: sel.dressing!, targetStep: 5 },
+              { label: t('builder.summary.dressing', language), value: formatCountMap(sel.dressing), targetStep: 5 },
               { label: t('builder.summary.toppings', language), value: formatCountMap(sel.toppings), targetStep: 6 },
             ] as const).map(({ label, value, targetStep }) => (
               <div
@@ -800,7 +840,6 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
             ))}
           </div>
 
-          {/* Add to cart */}
           <button
             onClick={handleAddToCart}
             className="w-full bg-coral-500 hover:bg-coral-600 active:scale-95 text-white font-bold
@@ -812,8 +851,6 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
           </button>
         </div>
       )}
-
-      {/* ── Back / Next navigation ────────────────────────────────────────── */}
 
       {!isSummary && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-40">

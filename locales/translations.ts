@@ -295,3 +295,4 @@ export function t(key: string, lang: Language): string {
 
   return value[lang] ?? value.nl ?? key; // fallback to Dutch, then key
 }
+

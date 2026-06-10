@@ -55,10 +55,14 @@ type FormData = {
   category:      'poke' | 'puree' | 'sides' | 'drinks';
   image:         string;
   ingredients:   string;
+  hasSizes:      boolean;
+  mediumPrice:   string;
+  largePrice:    string;
 };
 
 const BLANK: FormData = {
   name: '', price: '', descriptionNl: '', descriptionEn: '', descriptionFr: '', category: 'poke', image: '', ingredients: '',
+  hasSizes: false, mediumPrice: '', largePrice: '',
 };
 
 const STATUS_CHIP: Record<string, string> = {
@@ -192,9 +196,14 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   function parseForm(f: FormData): Partial<AdminMenuItem> {
+    const sizes = f.hasSizes ? [
+      { label: 'Medium', price: Number(f.mediumPrice) },
+      { label: 'Large',  price: Number(f.largePrice) },
+    ] : [];
+
     return {
       name:        f.name,
-      price:       Number(f.price),
+      price:       f.hasSizes ? Number(f.mediumPrice) : Number(f.price),
       description: {
         nl: f.descriptionNl,
         en: f.descriptionEn,
@@ -203,6 +212,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
       category:    f.category,
       image:       f.image,
       ingredients: f.ingredients.split(',').map((s) => s.trim()).filter(Boolean),
+      sizes:       sizes,
     };
   }
 
@@ -216,6 +226,9 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
       category:      item.category,
       image:         item.image,
       ingredients:   item.ingredients.join(', '),
+      hasSizes:      item.sizes && item.sizes.length > 0 ? true : false,
+      mediumPrice:   item.sizes?.[0]?.price ? String(item.sizes[0].price) : String(item.price),
+      largePrice:    item.sizes?.[1]?.price ? String(item.sizes[1].price) : String(item.price + 2.5),
     };
   }
 
@@ -742,43 +755,70 @@ function ItemForm({
   return (
     <form onSubmit={onSubmit} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <input required placeholder="Naam *"           className={INP} {...txt('name')} />
-        <input required type="number" step="0.01" min="0"
-               placeholder="Prijs (€) *"              className={INP} {...txt('price')} />
-        <select
-          required
-          value={form.category}
-          onChange={(e) => onChange({ ...form, category: e.target.value as FormData['category'] })}
-          className={INP}
-        >
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-        <input placeholder="Afbeelding URL"            className={INP} {...txt('image')} />
-        <textarea
-          placeholder="🇳🇱 Beschrijving (NL)"
-          rows={2}
-          className={`${INP} sm:col-span-2 resize-none`}
-          {...txt('descriptionNl')}
-        />
-        <textarea
-          placeholder="🇬🇧 Description (EN)"
-          rows={2}
-          className={`${INP} sm:col-span-2 resize-none`}
-          {...txt('descriptionEn')}
-        />
-        <textarea
-          placeholder="🇫🇷 Description (FR)"
-          rows={2}
-          className={`${INP} sm:col-span-2 resize-none`}
-          {...txt('descriptionFr')}
-        />
-        <input
-          placeholder="Ingrediënten (komma gescheiden)"
-          className={`${INP} sm:col-span-2`}
-          {...txt('ingredients')}
-        />
+        <div className="sm:col-span-2">
+          <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Naam</label>
+          <input required placeholder="Naam *" className={INP} {...txt('name')} />
+        </div>
+
+        <div className="sm:col-span-2 flex items-center gap-2 p-3 bg-white/50 rounded-xl border border-slate-100">
+          <input type="checkbox" id="hasSizes-admin" className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500"
+            checked={form.hasSizes} onChange={(e) => onChange({ ...form, hasSizes: e.target.checked })} />
+          <label htmlFor="hasSizes-admin" className="text-sm font-semibold text-slate-700 cursor-pointer">Meerdere maten (Medium/Large)</label>
+        </div>
+
+        {form.hasSizes ? (
+          <>
+            <div>
+              <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Prijs Medium</label>
+              <input required type="number" step="0.01" min="0" placeholder="€0.00" className={INP} {...txt('mediumPrice')} />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Prijs Large</label>
+              <input required type="number" step="0.01" min="0" placeholder="€0.00" className={INP} {...txt('largePrice')} />
+            </div>
+          </>
+        ) : (
+          <div>
+            <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Prijs</label>
+            <input required type="number" step="0.01" min="0" placeholder="Prijs (€) *" className={INP} {...txt('price')} />
+          </div>
+        )}
+
+        <div>
+          <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Categorie</label>
+          <select
+            required
+            value={form.category}
+            onChange={(e) => onChange({ ...form, category: e.target.value as FormData['category'] })}
+            className={INP}
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Afbeelding URL</label>
+          <input placeholder="Afbeelding URL" className={INP} {...txt('image')} />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Beschrijving (NL)</label>
+          <textarea placeholder="🇳🇱 Beschrijving (NL)" rows={2} className={`${INP} resize-none`} {...txt('descriptionNl')} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Description (EN)</label>
+          <textarea placeholder="🇬🇧 Description (EN)" rows={2} className={`${INP} resize-none`} {...txt('descriptionEn')} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Description (FR)</label>
+          <textarea placeholder="🇫🇷 Description (FR)" rows={2} className={`${INP} resize-none`} {...txt('descriptionFr')} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Ingrediënten</label>
+          <input placeholder="Ingrediënten (komma gescheiden)" className={INP} {...txt('ingredients')} />
+        </div>
       </div>
 
       <div className="flex justify-end gap-2 mt-3">

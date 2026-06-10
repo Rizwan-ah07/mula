@@ -44,6 +44,9 @@ export default function MenuCard({ item, quantity, cartEntries, onAdd, onRemove,
     category:       item.category as Category,
     image:          item.image,
     ingredients:    item.ingredients.join(', '),
+    hasSizes:       item.sizes && item.sizes.length > 0,
+    mediumPrice:    item.sizes?.[0]?.price ? String(item.sizes[0].price) : String(item.price),
+    largePrice:     item.sizes?.[1]?.price ? String(item.sizes[1].price) : String(item.price + 2.5),
   });
 
   const hasSizes    = item.sizes && item.sizes.length > 0;
@@ -60,12 +63,18 @@ export default function MenuCard({ item, quantity, cartEntries, onAdd, onRemove,
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+
+    const sizes = editForm.hasSizes ? [
+      { label: 'Medium', price: Number(editForm.mediumPrice) },
+      { label: 'Large',  price: Number(editForm.largePrice) },
+    ] : [];
+
     await fetch(`/api/menu-items/${item._id}`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name:        editForm.name,
-        price:       Number(editForm.price),
+        price:       editForm.hasSizes ? Number(editForm.mediumPrice) : Number(editForm.price),
         description: {
           nl: editForm.descriptionNl,
           en: editForm.descriptionEn,
@@ -74,6 +83,7 @@ export default function MenuCard({ item, quantity, cartEntries, onAdd, onRemove,
         category:    editForm.category,
         image:       editForm.image,
         ingredients: editForm.ingredients.split(',').map((s) => s.trim()).filter(Boolean),
+        sizes:       sizes,
       }),
     });
     setSaving(false);
@@ -228,44 +238,93 @@ export default function MenuCard({ item, quantity, cartEntries, onAdd, onRemove,
       {/* ── Edit modal ── */}
       {editOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-              <h2 className="font-bold text-slate-800">{t('menuCard.editTitle', language)} {item.name}</h2>
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+              <h2 className="font-bold text-slate-800 truncate">{t('menuCard.editTitle', language)} {item.name}</h2>
               <button onClick={() => setEditOpen(false)}
                 className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-500">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="p-5 space-y-3">
+            <form onSubmit={handleSave} className="p-5 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 gap-3">
-                <input required placeholder={`${t('menuCard.name', language)} *`} className={`${INP} col-span-2`}
-                  value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
-                <input required type="number" step="0.01" min="0" placeholder={`${t('menuCard.price', language)} *`} className={INP}
-                  value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: e.target.value })} />
-                <select required className={INP} value={editForm.category}
-                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value as Category })}>
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <input placeholder={t('menuCard.imageUrl', language)} className={`${INP} col-span-2`}
-                  value={editForm.image} onChange={(e) => setEditForm({ ...editForm, image: e.target.value })} />
-                <textarea placeholder="🇳🇱 Beschrijving (NL)" rows={2} className={`${INP} col-span-2 resize-none`}
-                  value={editForm.descriptionNl} onChange={(e) => setEditForm({ ...editForm, descriptionNl: e.target.value })} />
-                <textarea placeholder="🇬🇧 Description (EN)" rows={2} className={`${INP} col-span-2 resize-none`}
-                  value={editForm.descriptionEn} onChange={(e) => setEditForm({ ...editForm, descriptionEn: e.target.value })} />
-                <textarea placeholder="🇫🇷 Description (FR)" rows={2} className={`${INP} col-span-2 resize-none`}
-                  value={editForm.descriptionFr} onChange={(e) => setEditForm({ ...editForm, descriptionFr: e.target.value })} />
-                <input placeholder={t('menuCard.ingredients', language)} className={`${INP} col-span-2`}
-                  value={editForm.ingredients} onChange={(e) => setEditForm({ ...editForm, ingredients: e.target.value })} />
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Naam</label>
+                  <input required placeholder={`${t('menuCard.name', language)} *`} className={INP}
+                    value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                </div>
+
+                <div className="col-span-2 flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <input type="checkbox" id="hasSizes" className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500"
+                    checked={editForm.hasSizes} onChange={(e) => setEditForm({ ...editForm, hasSizes: e.target.checked })} />
+                  <label htmlFor="hasSizes" className="text-sm font-semibold text-slate-700 cursor-pointer">Meerdere maten (Medium/Large)</label>
+                </div>
+
+                {editForm.hasSizes ? (
+                  <>
+                    <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Prijs Medium</label>
+                      <input required type="number" step="0.01" min="0" placeholder="€0.00" className={INP}
+                        value={editForm.mediumPrice} onChange={(e) => setEditForm({ ...editForm, mediumPrice: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Prijs Large</label>
+                      <input required type="number" step="0.01" min="0" placeholder="€0.00" className={INP}
+                        value={editForm.largePrice} onChange={(e) => setEditForm({ ...editForm, largePrice: e.target.value })} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="col-span-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Prijs</label>
+                    <input required type="number" step="0.01" min="0" placeholder={`${t('menuCard.price', language)} *`} className={INP}
+                      value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: e.target.value })} />
+                  </div>
+                )}
+
+                <div className="col-span-1">
+                  <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Categorie</label>
+                  <select required className={INP} value={editForm.category}
+                    onChange={(e) => setEditForm({ ...editForm, category: e.target.value as Category })}>
+                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Afbeelding URL</label>
+                  <input placeholder={t('menuCard.imageUrl', language)} className={INP}
+                    value={editForm.image} onChange={(e) => setEditForm({ ...editForm, image: e.target.value })} />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Beschrijving (NL)</label>
+                  <textarea placeholder="🇳🇱 Beschrijving" rows={2} className={`${INP} resize-none`}
+                    value={editForm.descriptionNl} onChange={(e) => setEditForm({ ...editForm, descriptionNl: e.target.value })} />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Description (EN)</label>
+                  <textarea placeholder="🇬🇧 Description" rows={2} className={`${INP} resize-none`}
+                    value={editForm.descriptionEn} onChange={(e) => setEditForm({ ...editForm, descriptionEn: e.target.value })} />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Description (FR)</label>
+                  <textarea placeholder="🇫🇷 Description" rows={2} className={`${INP} resize-none`}
+                    value={editForm.descriptionFr} onChange={(e) => setEditForm({ ...editForm, descriptionFr: e.target.value })} />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Ingrediënten</label>
+                  <input placeholder={t('menuCard.ingredients', language)} className={INP}
+                    value={editForm.ingredients} onChange={(e) => setEditForm({ ...editForm, ingredients: e.target.value })} />
+                </div>
               </div>
 
-              <div className="flex gap-2 pt-1">
+              <div className="flex gap-2 pt-2 pb-1 shrink-0">
                 <button type="button" onClick={() => setEditOpen(false)}
-                  className="flex-1 py-2.5 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+                  className="flex-1 py-3 text-sm font-bold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
                   {t('menuCard.cancel', language)}
                 </button>
                 <button type="submit" disabled={saving}
-                  className="flex-1 py-2.5 text-sm font-semibold bg-brand-600 text-white rounded-xl hover:bg-brand-700 disabled:opacity-50 transition-colors">
+                  className="flex-1 py-3 text-sm font-bold bg-brand-600 text-white rounded-xl hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-lg shadow-brand-600/20">
                   {saving ? t('menuCard.saving', language) : t('menuCard.save', language)}
                 </button>
               </div>

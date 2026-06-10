@@ -445,7 +445,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
                   </div>
 
                   <span className="text-sm font-bold text-slate-700 whitespace-nowrap flex-shrink-0">
-                    {item.sizes
+                    {item.sizes && item.sizes.length > 0
                       ? `v.a. €${Math.min(...item.sizes.map((s) => s.price)).toFixed(2)}`
                       : `€${item.price.toFixed(2)}`}
                   </span>

@@ -84,7 +84,7 @@ function calcPrice(sel: Selections): number {
   const base          = sel.size === 'Large' ? 13.5 : 11.0;
   const mixInLimit    = sel.size === 'Large' ? 5 : 4;
   const extraMixIns   = Math.max(0, sumMap(sel.mixIns)  - mixInLimit);
-  const extraToppings  = Math.max(0, sumMap(sel.toppings) - 1);
+  const extraToppings  = Math.max(0, sumMap(sel.toppings) - 3);
   const extraDressings = Math.max(0, sumMap(sel.dressing) - 1);
   return base + (extraMixIns * 1.0) + (extraToppings * 1.0) + (extraDressings * 1.0);
 }
@@ -257,7 +257,7 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
   const totalDressings = sumMap(sel.dressing);
   
   const extraMixIns    = Math.max(0, totalMixIns  - mixInLimit);
-  const extraToppings   = Math.max(0, totalToppings - 1);
+  const extraToppings   = Math.max(0, totalToppings - 3);
   const extraDressings  = Math.max(0, totalDressings - 1);
   
   const currentPrice   = calcPrice(sel);
@@ -272,7 +272,7 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
     if (step === 3) return sel.protein !== null;
     if (step === 4) return totalMixIns >= 1 && (totalMixIns >= mixInLimit || sel.mixInsDone);
     if (step === 5) return totalDressings >= 1 && (totalDressings >= 1 || sel.dressingDone);
-    if (step === 6) return totalToppings >= 1 && (totalToppings >= 1 || sel.toppingsDone);
+    if (step === 6) return totalToppings >= 1 && (totalToppings >= 3 || sel.toppingsDone);
     return false;
   }
 
@@ -688,13 +688,13 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
               <span className="text-xs text-slate-400 ml-1">({t('builder.steps.extraCost', language)})</span>
             </p>
             <span className={`text-sm font-bold px-3 py-0.5 rounded-full transition-colors ${
-              totalToppings > 1
+              totalToppings > 3
                 ? 'bg-coral-100 text-coral-700'
                 : totalToppings >= 1
                 ? 'bg-brand-100 text-brand-700'
                 : 'bg-slate-100 text-slate-600'
             }`}>
-              {totalToppings} / 1
+              {totalToppings} / 3
               {extraToppings > 0 && ` (+€${extraToppings.toFixed(2)})`}
             </span>
           </div>
@@ -704,8 +704,8 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
               <CounterChip
                 key={t} label={t}
                 count={sel.toppings[t] ?? 0}
-                isExtra={totalToppings > 1 && (sel.toppings[t] ?? 0) > 0
-                           ? (sumMap(sel.toppings) - (sel.toppings[t] ?? 0)) >= 1
+                isExtra={totalToppings > 3 && (sel.toppings[t] ?? 0) > 0
+                           ? (sumMap(sel.toppings) - (sel.toppings[t] ?? 0)) >= 3
                            : false}
                 onAdd={()    => setSel((p) => ({ ...p, toppings: addToMap(p.toppings, t), toppingsDone: false }))}
                 onRemove={() => setSel((p) => ({ ...p, toppings: removeFromMap(p.toppings, t) }))}
@@ -757,7 +757,7 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
             )
           )}
 
-          {totalToppings > 0 && totalToppings < 1 && (
+          {totalToppings > 0 && totalToppings < 3 && (
             <button
               onClick={() => setSel((p) => ({ ...p, toppingsDone: !p.toppingsDone }))}
               className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm

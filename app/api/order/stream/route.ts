@@ -38,7 +38,7 @@ export async function GET(req: Request) {
 
       req.signal.addEventListener('abort', onAbort);
 
-      changeStream.on('change', (change) => {
+      changeStream.on('change', (change: any) => {
         const document = change.fullDocument;
         if (!document) return;
 

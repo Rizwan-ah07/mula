@@ -4,7 +4,7 @@ import { getDb } from '@/lib/mongodb';
 export async function GET() {
   try {
     const db = await getDb();
-    const collection = db.collection('bowlOptions');
+    const collection = db.collection<any>('bowlOptions');
     
     // Get or create default options
     const defaults = {
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     }
     
     const db = await getDb();
-    const collection = db.collection('bowlOptions');
+    const collection = db.collection<any>('bowlOptions');
     
     if (action === 'add') {
       await collection.updateOne(

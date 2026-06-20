@@ -91,7 +91,7 @@ export const translations = {
     addToCart: { nl: 'Toevoegen', en: 'Add to Cart', fr: 'Ajouter' },
     back: { nl: 'Terug', en: 'Back', fr: 'Retour' },
     next: { nl: 'Volgende', en: 'Next', fr: 'Suivant' },
-    summary: { nl: 'Overzicht', en: 'Summary', fr: 'Résumé' },
+    summaryLabel: { nl: 'Overzicht', en: 'Summary', fr: 'Résumé' },
     edit: { nl: 'Aanpassen', en: 'Edit', fr: 'Modifier' },
 
     steps: {
@@ -281,6 +281,11 @@ export const translations = {
     addMixIn: { nl: 'Mix-in toevoegen', en: 'Add mix-in', fr: 'Ajouter un mix-in' },
     addDressing: { nl: 'Dressing toevoegen', en: 'Add dressing', fr: 'Ajouter une sauce' },
     addTopping: { nl: 'Topping toevoegen', en: 'Add topping', fr: 'Ajouter une garniture' },
+  },
+  drinkSelector: {
+    title: { nl: 'Kies een drankje', en: 'Choose a drink', fr: 'Choisissez une boisson' },
+    outOfStock: { nl: 'Tijdelijk niet op voorraad', en: 'Temporarily out of stock', fr: 'Temporairement en rupture de stock' },
+    noDrinks: { nl: 'Geen drankjes beschikbaar.', en: 'No drinks available.', fr: 'Aucune boisson disponible.' },
   },
 };
 

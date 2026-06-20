@@ -47,10 +47,13 @@ export default function MenuCard({ item, quantity, cartEntries, onAdd, onRemove,
     hasSizes:       item.sizes && item.sizes.length > 0,
     mediumPrice:    item.sizes?.[0]?.price ? String(item.sizes[0].price) : String(item.price),
     largePrice:     item.sizes?.[1]?.price ? String(item.sizes[1].price) : String(item.price + 2.5),
+    hasDrinkOptions: item.hasDrinkOptions ?? false,
   });
 
   const hasSizes    = item.sizes && item.sizes.length > 0;
-  const qtySimple   = cartEntries.find((e) => e._id === item._id)?.quantity ?? 0;
+  const qtySimple   = item.hasDrinkOptions
+    ? cartEntries.reduce((s, e) => s + e.quantity, 0)
+    : cartEntries.find((e) => e._id === item._id)?.quantity ?? 0;
   const displayPrice = hasSizes ? item.sizes![0].price : item.price;
 
   async function handleDelete() {
@@ -84,6 +87,7 @@ export default function MenuCard({ item, quantity, cartEntries, onAdd, onRemove,
         image:       editForm.image,
         ingredients: editForm.ingredients.split(',').map((s) => s.trim()).filter(Boolean),
         sizes:       sizes,
+        hasDrinkOptions: editForm.category === 'drinks' ? editForm.hasDrinkOptions : false,
       }),
     });
     setSaving(false);
@@ -260,6 +264,14 @@ export default function MenuCard({ item, quantity, cartEntries, onAdd, onRemove,
                     checked={editForm.hasSizes} onChange={(e) => setEditForm({ ...editForm, hasSizes: e.target.checked })} />
                   <label htmlFor="hasSizes" className="text-sm font-semibold text-slate-700 cursor-pointer">Meerdere maten (Medium/Large)</label>
                 </div>
+
+                {editForm.category === 'drinks' && (
+                  <div className="col-span-2 flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <input type="checkbox" id="hasDrinkOptions" className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500"
+                      checked={editForm.hasDrinkOptions} onChange={(e) => setEditForm({ ...editForm, hasDrinkOptions: e.target.checked })} />
+                    <label htmlFor="hasDrinkOptions" className="text-sm font-semibold text-slate-700 cursor-pointer">Heeft drank opties (Kies Cola, Fanta, etc. bij toevoegen)</label>
+                  </div>
+                )}
 
                 {editForm.hasSizes ? (
                   <>

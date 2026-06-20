@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
     const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const order = {
+      serviceType: 'dine_in' as const,
       tableNumber,
       items,
       notes: '',

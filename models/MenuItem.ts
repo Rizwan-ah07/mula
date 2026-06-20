@@ -18,6 +18,7 @@ export interface IMenuItem {
   available:   boolean;
   ingredients: string[];
   sizes?:      IMenuItemSize[];
+  hasDrinkOptions?: boolean;
   createdAt?:  Date;
   updatedAt?:  Date;
 }

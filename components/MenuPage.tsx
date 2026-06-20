@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import MenuCard from './MenuCard';
 import Cart from './Cart';
 import TableModal from './TableModal';
@@ -25,6 +26,7 @@ export interface MenuItem {
   image: string;
   ingredients: string[];
   sizes?: MenuItemSize[];
+  hasDrinkOptions?: boolean;
 }
 
 export interface CartItem {
@@ -60,6 +62,15 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
   const [cartOpen,       setCartOpen]       = useState(false);
   const [checkoutInfo,   setCheckoutInfo]   = useState<CheckoutInfo | null>(null);
   const [showModal,      setShowModal]      = useState(false);
+  const [drinks,         setDrinks]         = useState<{ _id: string; name: string; available: boolean }[]>([]);
+  const [activeDrinkItem, setActiveDrinkItem] = useState<MenuItem | null>(null);
+
+  useEffect(() => {
+    fetch('/api/drinks')
+      .then((res) => res.json())
+      .then((data) => setDrinks(data))
+      .catch((err) => console.error('Failed to load drinks', err));
+  }, []);
 
   const TABS: { label: string; value: Tab }[] = [
     { label: t('tabs.custom', language), value: 'build'  },
@@ -120,10 +131,19 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
 
   // ── Cart helpers ──────────────────────────────────────────────────────────
 
-  function addToCart(item: MenuItem, sizeLabel?: string) {
+  function addToCart(item: MenuItem, sizeLabel?: string, drinkOption?: string) {
+    if (item.hasDrinkOptions && !drinkOption) {
+      setActiveDrinkItem(item);
+      return;
+    }
+
     const sizeObj = sizeLabel ? item.sizes?.find((s) => s.label === sizeLabel) : undefined;
     const price   = sizeObj ? sizeObj.price : item.price;
-    const cartKey = sizeLabel ? `${item._id}_${sizeLabel.toLowerCase()}` : item._id;
+    const cartKey = drinkOption
+      ? `${item._id}_${drinkOption.toLowerCase().replace(/\s+/g, '_')}`
+      : sizeLabel
+      ? `${item._id}_${sizeLabel.toLowerCase()}`
+      : item._id;
 
     setCart((prev) => {
       const existing = prev.find((c) => c._id === cartKey);
@@ -143,6 +163,7 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
           ingredients:  item.ingredients,
           quantity:     1,
           selectedSize: sizeLabel,
+          itemNotes:    drinkOption,
         },
       ];
     });
@@ -256,6 +277,10 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
                         );
                         return sum + (entry?.quantity ?? 0);
                       }, 0)
+                    : item.hasDrinkOptions
+                    ? cart
+                        .filter((c) => c._id.startsWith(`${item._id}_`))
+                        .reduce((sum, c) => sum + c.quantity, 0)
                     : (cart.find((c) => c._id === item._id)?.quantity ?? 0);
 
                   // Cart entries that belong to this item (for size-specific counts)
@@ -264,7 +289,8 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
                       c._id === item._id ||
                       (item.sizes?.some(
                         (s) => c._id === `${item._id}_${s.label.toLowerCase()}`
-                      ))
+                      )) ||
+                      (item.hasDrinkOptions && c._id.startsWith(`${item._id}_`))
                   );
 
                   return (
@@ -277,8 +303,12 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
                       onRemove={(sizeLabel) => {
                         const key = sizeLabel
                           ? `${item._id}_${sizeLabel.toLowerCase()}`
+                          : item.hasDrinkOptions
+                          ? cart.find((c) => c._id.startsWith(`${item._id}_`))?._id
                           : item._id;
-                        changeQty(key, -1);
+                        if (key) {
+                          changeQty(key, -1);
+                        }
                       }}
                       isAdmin={isAdmin}
                     />
@@ -321,6 +351,76 @@ export default function MenuPage({ items, tableNumber, isAdmin }: Props) {
           />
         )}
       </div>
+
+      {/* Drink Option Selector Modal */}
+      {activeDrinkItem && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col transform transition-all scale-100 animate-in fade-in duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">
+                  {t('drinkSelector.title', language)}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">{activeDrinkItem.name}</p>
+              </div>
+              <button
+                onClick={() => setActiveDrinkItem(null)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Drink Options List */}
+            <div className="p-5 overflow-y-auto space-y-3">
+              {drinks.length === 0 ? (
+                <p className="text-center text-slate-500 py-6">
+                  {t('drinkSelector.noDrinks', language)}
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-2.5">
+                  {drinks.map((drink) => {
+                    const isAvailable = drink.available;
+                    return (
+                      <button
+                        key={drink._id}
+                        disabled={!isAvailable}
+                        onClick={() => {
+                          addToCart(activeDrinkItem, undefined, drink.name);
+                          setActiveDrinkItem(null);
+                        }}
+                        className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl border text-left transition-all ${
+                          isAvailable
+                            ? 'bg-slate-50 border-slate-100 hover:bg-brand-50 hover:border-brand-300 text-slate-700 font-medium hover:text-brand-800 active:scale-[0.98]'
+                            : 'bg-slate-50/50 border-slate-100/50 text-slate-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <span className="text-sm font-semibold">{drink.name}</span>
+                        {!isAvailable && (
+                          <span className="text-[10px] uppercase tracking-wider font-bold bg-red-50 text-red-500 px-2 py-0.5 rounded-md">
+                            {t('drinkSelector.outOfStock', language)}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end shrink-0">
+              <button
+                onClick={() => setActiveDrinkItem(null)}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                {t('menuCard.cancel', language)}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

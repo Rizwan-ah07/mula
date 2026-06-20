@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   }
 
   const res = NextResponse.json({ ok: true });
-  res.cookies.set('admin_auth', process.env.ADMIN_PASSWORD, {
+  res.cookies.set('admin_auth', process.env.ADMIN_PASSWORD || '', {
     httpOnly: true,
     sameSite: 'strict',
     path:     '/',

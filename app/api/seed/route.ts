@@ -173,6 +173,7 @@ const SEED_ITEMS: Omit<IMenuItem, '_id' | 'available' | 'createdAt' | 'updatedAt
     category: 'drinks',
     image: '',
     ingredients: [],
+    hasDrinkOptions: true,
   },
   {
     name: 'Water',
@@ -185,6 +186,7 @@ const SEED_ITEMS: Omit<IMenuItem, '_id' | 'available' | 'createdAt' | 'updatedAt
     category: 'drinks',
     image: '',
     ingredients: [],
+    hasDrinkOptions: true,
   },
   // ── Smoothies ──────────────────────────────────────────────────────────────
   {

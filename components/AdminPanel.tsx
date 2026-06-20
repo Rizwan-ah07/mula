@@ -16,6 +16,7 @@ export type AdminMenuItem = {
   available:   boolean;
   ingredients: string[];
   sizes?:      { label: string; price: number }[];
+  hasDrinkOptions?: boolean;
 };
 
 export type AdminOrder = {
@@ -58,11 +59,12 @@ type FormData = {
   hasSizes:      boolean;
   mediumPrice:   string;
   largePrice:    string;
+  hasDrinkOptions: boolean;
 };
 
 const BLANK: FormData = {
   name: '', price: '', descriptionNl: '', descriptionEn: '', descriptionFr: '', category: 'poke', image: '', ingredients: '',
-  hasSizes: false, mediumPrice: '', largePrice: '',
+  hasSizes: false, mediumPrice: '', largePrice: '', hasDrinkOptions: false,
 };
 
 const STATUS_CHIP: Record<string, string> = {
@@ -111,7 +113,7 @@ function toDateInput(date: Date): string {
 
 export default function AdminPanel({ initialItems, initialOrders }: Props) {
   const todayInput = toDateInput(new Date());
-  const [tab,      setTab]      = useState<'items' | 'orders' | 'bowlOptions'>('items');
+  const [tab,      setTab]      = useState<'items' | 'orders' | 'bowlOptions' | 'drinks'>('items');
   const [items,    setItems]    = useState<AdminMenuItem[]>(initialItems);
   const [orders,   setOrders]   = useState<AdminOrder[]>(initialOrders);
   const [filter,   setFilter]   = useState<'all' | 'pending' | 'preparing' | 'waiting_payment' | 'completed' | 'cancelled'>('all');
@@ -132,6 +134,8 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
   } | null>(null);
   const [newBowlOption, setNewBowlOption] = useState('');
   const [selectedBowlCategory, setSelectedBowlCategory] = useState<'bases' | 'proteins' | 'mixIns' | 'dressings' | 'toppings'>('bases');
+  const [adminDrinks, setAdminDrinks] = useState<{ _id: string; name: string; available: boolean }[]>([]);
+  const [newDrinkName, setNewDrinkName] = useState('');
 
   const router = useRouter();
 
@@ -141,7 +145,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
     router.refresh();
   }
 
-  // Fetch bowl options on mount
+  // Fetch bowl options and drinks on mount
   useEffect(() => {
     const fetchBowlOptions = async () => {
       try {
@@ -152,8 +156,71 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
         console.error('Error fetching bowl options:', error);
       }
     };
+    const fetchDrinks = async () => {
+      try {
+        const res = await fetch('/api/drinks');
+        const data = await res.json();
+        setAdminDrinks(data);
+      } catch (error) {
+        console.error('Error fetching drinks:', error);
+      }
+    };
     fetchBowlOptions();
+    fetchDrinks();
   }, []);
+
+  async function addDrink(name: string) {
+    if (!name.trim()) return;
+    setBusy('add-drink');
+    try {
+      const res = await fetch('/api/drinks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setAdminDrinks((prev) => [...prev, created]);
+        setNewDrinkName('');
+      }
+    } catch (error) {
+      console.error('Error adding drink:', error);
+    }
+    setBusy(null);
+  }
+
+  async function toggleDrinkAvailable(drink: { _id: string; name: string; available: boolean }) {
+    setBusy(drink._id);
+    try {
+      const res = await fetch(`/api/drinks/${drink._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ available: !drink.available }),
+      });
+      if (res.ok) {
+        setAdminDrinks((prev) =>
+          prev.map((d) => (d._id === drink._id ? { ...d, available: !d.available } : d))
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling drink availability:', error);
+    }
+    setBusy(null);
+  }
+
+  async function deleteDrink(id: string) {
+    if (!confirm('Dit drankje definitief verwijderen?')) return;
+    setBusy(id);
+    try {
+      const res = await fetch(`/api/drinks/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setAdminDrinks((prev) => prev.filter((d) => d._id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting drink:', error);
+    }
+    setBusy(null);
+  }
 
   async function addBowlOption(category: 'bases' | 'proteins' | 'mixIns' | 'dressings' | 'toppings', item: string) {
     if (!item.trim()) return;
@@ -213,6 +280,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
       image:       f.image,
       ingredients: f.ingredients.split(',').map((s) => s.trim()).filter(Boolean),
       sizes:       sizes,
+      hasDrinkOptions: f.category === 'drinks' ? f.hasDrinkOptions : false,
     };
   }
 
@@ -229,6 +297,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
       hasSizes:      item.sizes && item.sizes.length > 0 ? true : false,
       mediumPrice:   item.sizes?.[0]?.price ? String(item.sizes[0].price) : String(item.price),
       largePrice:    item.sizes?.[1]?.price ? String(item.sizes[1].price) : String(item.price + 2.5),
+      hasDrinkOptions: item.hasDrinkOptions ?? false,
     };
   }
 
@@ -341,7 +410,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
 
       {/* Tab bar */}
       <div className="flex items-end gap-0 mb-6 border-b border-slate-200">
-        {(['items', 'orders', 'bowlOptions'] as const).map((t) => (
+        {(['items', 'orders', 'bowlOptions', 'drinks'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -351,7 +420,13 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
-            {t === 'items' ? `Menu Items (${items.length})` : t === 'orders' ? `Bestellingen (${orders.length})` : 'Bowl Opties'}
+            {t === 'items'
+              ? `Menu Items (${items.length})`
+              : t === 'orders'
+              ? `Bestellingen (${orders.length})`
+              : t === 'bowlOptions'
+              ? 'Bowl Opties'
+              : 'Dranken'}
           </button>
         ))}
         <div className="flex-1" />
@@ -724,6 +799,98 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
           )}
         </div>
       )}
+
+      {/* ─────────────────────── DRINKS MANAGEMENT TAB ─────────────────────── */}
+      {tab === 'drinks' && (
+        <div>
+          <h2 className="text-lg font-bold text-slate-800 mb-6">Dranken Beheer (Opties)</h2>
+          
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6">
+            <h3 className="font-semibold text-slate-800 mb-3">Nieuw Drankje Toevoegen</h3>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="bijv. Coca-Cola, Sprite, Ice Tea Green..."
+                value={newDrinkName}
+                onChange={(e) => setNewDrinkName(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    addDrink(newDrinkName);
+                  }
+                }}
+                className={INP}
+              />
+              <button
+                onClick={() => addDrink(newDrinkName)}
+                disabled={busy === 'add-drink'}
+                className="px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 disabled:opacity-50 transition-all shrink-0 shadow-lg shadow-brand-600/20"
+              >
+                {busy === 'add-drink' ? 'Bezig…' : 'Toevoegen'}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+            <div className="grid grid-cols-12 gap-3 px-5 py-3.5 text-xs font-semibold text-slate-500 bg-slate-50 border-b border-slate-100">
+              <span className="col-span-6 sm:col-span-8">Drankje</span>
+              <span className="col-span-3 sm:col-span-2 text-center">Status</span>
+              <span className="col-span-3 sm:col-span-2 text-right">Acties</span>
+            </div>
+
+            {adminDrinks.length === 0 ? (
+              <p className="text-center text-slate-400 py-12">Geen dranken geconfigureerd.</p>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {adminDrinks.map((drink) => (
+                  <div
+                    key={drink._id}
+                    className={`grid grid-cols-12 gap-3 px-5 py-4 items-center text-sm transition-opacity ${
+                      !drink.available ? 'opacity-60 bg-slate-50/30' : ''
+                    } ${busy === drink._id ? 'pointer-events-none opacity-60' : ''}`}
+                  >
+                    <span className="col-span-6 sm:col-span-8 font-semibold text-slate-800">
+                      {drink.name}
+                    </span>
+
+                    <span className="col-span-3 sm:col-span-2 text-center">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          drink.available
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}
+                      >
+                        {drink.available ? 'In voorraad' : 'Uit verkocht'}
+                      </span>
+                    </span>
+
+                    <div className="col-span-3 sm:col-span-2 flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => toggleDrinkAvailable(drink)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          drink.available
+                            ? 'text-green-600 hover:bg-green-50'
+                            : 'text-slate-400 hover:bg-slate-50'
+                        }`}
+                        title={drink.available ? 'Markeer als uit verkocht' : 'Markeer als in voorraad'}
+                      >
+                        {drink.available ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => deleteDrink(drink._id)}
+                        className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        title="Verwijderen"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -765,6 +932,14 @@ function ItemForm({
             checked={form.hasSizes} onChange={(e) => onChange({ ...form, hasSizes: e.target.checked })} />
           <label htmlFor="hasSizes-admin" className="text-sm font-semibold text-slate-700 cursor-pointer">Meerdere maten (Medium/Large)</label>
         </div>
+
+        {form.category === 'drinks' && (
+          <div className="sm:col-span-2 flex items-center gap-2 p-3 bg-white/50 rounded-xl border border-slate-100">
+            <input type="checkbox" id="hasDrinkOptions-admin" className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500"
+              checked={form.hasDrinkOptions} onChange={(e) => onChange({ ...form, hasDrinkOptions: e.target.checked })} />
+            <label htmlFor="hasDrinkOptions-admin" className="text-sm font-semibold text-slate-700 cursor-pointer">Heeft drank opties (Kies Cola, Fanta, etc. bij toevoegen)</label>
+          </div>
+        )}
 
         {form.hasSizes ? (
           <>

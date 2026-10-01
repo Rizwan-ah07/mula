@@ -131,6 +131,7 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
     mixIns?: string[];
     dressings?: string[];
     toppings?: string[];
+    mixInPrices?: Record<string, number>;
   } | null>(null);
   const [newBowlOption, setNewBowlOption] = useState('');
   const [selectedBowlCategory, setSelectedBowlCategory] = useState<'bases' | 'proteins' | 'mixIns' | 'dressings' | 'toppings'>('bases');
@@ -256,6 +257,27 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
       }
     } catch (error) {
       console.error('Error removing bowl option:', error);
+    }
+    setBusy(null);
+  }
+
+  async function setMixInPrice(item: string, raw: string) {
+    const price = raw.trim() === '' ? 0 : Number(raw.replace(',', '.'));
+    if (!Number.isFinite(price) || price < 0) return;
+    if (price === (bowlOptions?.mixInPrices?.[item] ?? 0)) return;
+    setBusy(`bowl-price-${item}`);
+    try {
+      const res = await fetch('/api/bowl-options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: 'mixIns', item, action: 'setPrice', price }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setBowlOptions(updated);
+      }
+    } catch (error) {
+      console.error('Error setting mix-in price:', error);
     }
     setBusy(null);
   }
@@ -752,11 +774,40 @@ export default function AdminPanel({ initialItems, initialOrders }: Props) {
                   <h3 className="font-semibold text-slate-800 mb-3 capitalize">
                     {category === 'bases' ? 'Basis' : category === 'proteins' ? 'Eiwitten' : category === 'mixIns' ? 'Mix-ins' : category === 'dressings' ? 'Dressings' : 'Toppings'}
                   </h3>
-                  
+                  {category === 'mixIns' && (
+                    <p className="text-xs text-slate-500 -mt-2 mb-3">
+                      Meerprijs per mix-in (bv. Mango €1). Laat leeg of 0 als het bij de prijs inbegrepen is.
+                    </p>
+                  )}
+                  {category === 'proteins' && (
+                    <p className="text-xs text-slate-500 -mt-2 mb-3">
+                      Klanten kunnen een extra eiwit nemen (hetzelfde of een ander) voor +€2.50.
+                    </p>
+                  )}
+
                   <div className="flex flex-wrap gap-2 mb-3">
                     {(bowlOptions[category] || []).map((item) => (
                       <div key={item} className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1.5">
                         <span className="text-sm text-slate-700">{item}</span>
+                        {category === 'mixIns' && (
+                          <label className="flex items-center gap-0.5 text-xs text-slate-500">
+                            +€
+                            <input
+                              key={`${item}:${bowlOptions.mixInPrices?.[item] ?? 0}`}
+                              type="number"
+                              step="0.10"
+                              min="0"
+                              placeholder="0"
+                              defaultValue={bowlOptions.mixInPrices?.[item] || ''}
+                              onBlur={(e) => setMixInPrice(item, e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                              }}
+                              disabled={busy === `bowl-price-${item}`}
+                              className="w-14 px-1.5 py-0.5 rounded border border-slate-200 text-xs text-slate-700"
+                            />
+                          </label>
+                        )}
                         <button
                           onClick={() => removeBowlOption(category, item)}
                           disabled={busy === `bowl-${category}-${item}`}

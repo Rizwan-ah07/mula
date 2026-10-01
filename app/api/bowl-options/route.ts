@@ -24,6 +24,8 @@ export async function GET() {
         'Furikake', 'Gebakken Ui', 'Gedroogde Chili',
         'Jalapeños', 'Gember / Lente Ui', "Masago / Nacho's", 'Noten / Sesam-mix',
       ],
+      // Surcharge per mix-in (€). Mix-ins not listed here are included in the bowl price.
+      mixInPrices: { Mango: 1, Avocado: 1 } as Record<string, number>,
     };
 
     let options = await collection.findOne({ _id: 'default' });
@@ -37,6 +39,10 @@ export async function GET() {
         if (!options[key] || !Array.isArray(options[key]) || options[key].length === 0) {
           toSet[key] = (defaults as any)[key];
         }
+      }
+      // Only seed prices once; an empty object means the admin cleared them
+      if (!options.mixInPrices || typeof options.mixInPrices !== 'object') {
+        toSet.mixInPrices = defaults.mixInPrices;
       }
       if (Object.keys(toSet).length > 0) {
         await collection.updateOne({ _id: 'default' }, { $set: toSet });
@@ -57,18 +63,18 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { category, item, action } = body; // action: 'add' or 'remove'
-    
+    const { category, item, action, price } = body; // action: 'add' | 'remove' | 'setPrice'
+
     if (!category || !item) {
       return NextResponse.json(
         { error: 'Category and item are required' },
         { status: 400 }
       );
     }
-    
+
     const db = await getDb();
     const collection = db.collection<any>('bowlOptions');
-    
+
     if (action === 'add') {
       await collection.updateOne(
         { _id: 'default' },
@@ -79,6 +85,18 @@ export async function POST(req: NextRequest) {
         { _id: 'default' },
         { $pull: { [category]: item } }
       );
+      if (category === 'mixIns') {
+        await setMixInPrice(collection, item, 0);
+      }
+    } else if (action === 'setPrice') {
+      const value = Number(price);
+      if (category !== 'mixIns' || !Number.isFinite(value) || value < 0) {
+        return NextResponse.json(
+          { error: 'A non-negative price for a mix-in is required' },
+          { status: 400 }
+        );
+      }
+      await setMixInPrice(collection, item, value);
     }
     
     const updated = await collection.findOne({ _id: 'default' });
@@ -90,4 +108,17 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Rewrites the whole map rather than `$set: { 'mixInPrices.<name>': … }`,
+// so mix-in names containing dots or `$` can't turn into nested paths.
+async function setMixInPrice(collection: any, item: string, price: number) {
+  const doc = await collection.findOne({ _id: 'default' });
+  const prices: Record<string, number> = { ...(doc?.mixInPrices ?? {}) };
+  if (price > 0) {
+    prices[item] = Math.round(price * 100) / 100;
+  } else {
+    delete prices[item];
+  }
+  await collection.updateOne({ _id: 'default' }, { $set: { mixInPrices: prices } });
 }

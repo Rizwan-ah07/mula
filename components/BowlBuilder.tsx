@@ -22,6 +22,9 @@ let TOPPINGS = [
   'Furikake', 'Gebakken Ui', 'Gedroogde Chili',
   'Jalapeños', 'Gember / Lente Ui', "Masago / Nacho's", 'Noten / Sesam-mix',
 ];
+// Surcharge per mix-in; anything not listed is included in the bowl price
+const MIXIN_PRICES: Record<string, number> = { Mango: 1, Avocado: 1 };
+const EXTRA_PROTEIN_PRICE = 2.5;   // second portion: same (double) or a different protein
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,6 +32,7 @@ interface Selections {
   size:         'Medium' | 'Large' | null;
   base:         string | null;
   protein:      string | null;
+  extraProtein: string | null;          // same as protein = double portion
   mixIns:       Record<string, number>;   // item → count, duplicates allowed
   mixInsDone:   boolean;                  // "Niets meer" clicked
   dressing:     Record<string, number>;   // item → count
@@ -80,13 +84,29 @@ function formatCountMap(map: Record<string, number>): string {
     .join(', ');
 }
 
-function calcPrice(sel: Selections): number {
+/** Surcharges for priced mix-ins (e.g. Mango +€1), one line per selected item */
+function premiumMixIns(mixIns: Record<string, number>, prices: Record<string, number>) {
+  return Object.entries(mixIns)
+    .filter(([item, c]) => c > 0 && (prices[item] ?? 0) > 0)
+    .map(([item, count]) => ({ item, count, total: count * prices[item] }));
+}
+
+/** "Crispy Chicken", "Crispy Chicken ×2" (double) or "Crispy Chicken + Scampi" */
+function proteinLabel(sel: Selections): string {
+  if (!sel.extraProtein) return sel.protein ?? '';
+  if (sel.extraProtein === sel.protein) return `${sel.protein} ×2`;
+  return `${sel.protein} + ${sel.extraProtein}`;
+}
+
+function calcPrice(sel: Selections, mixInPrices: Record<string, number>): number {
   const base          = sel.size === 'Large' ? 13.5 : 11.0;
   const mixInLimit    = sel.size === 'Large' ? 5 : 4;
   const extraMixIns   = Math.max(0, sumMap(sel.mixIns)  - mixInLimit);
   const extraToppings  = Math.max(0, sumMap(sel.toppings) - 3);
   const extraDressings = Math.max(0, sumMap(sel.dressing) - 1);
-  return base + (extraMixIns * 1.0) + (extraToppings * 1.0) + (extraDressings * 1.0);
+  const premium        = premiumMixIns(sel.mixIns, mixInPrices).reduce((s, p) => s + p.total, 0);
+  const protein        = sel.extraProtein ? EXTRA_PROTEIN_PRICE : 0;
+  return base + (extraMixIns * 1.0) + (extraToppings * 1.0) + (extraDressings * 1.0) + premium + protein;
 }
 
 // ── Step meta ─────────────────────────────────────────────────────────────────
@@ -151,8 +171,9 @@ function Chip({ label, selected, onClick }: {
 /**
  * Counter chip for mix-ins, toppings, and sauces.
  */
-function CounterChip({ label, count, onAdd, onRemove, isExtra, disabledAdd }: {
+function CounterChip({ label, count, onAdd, onRemove, isExtra, disabledAdd, surcharge }: {
   label: string; count: number; onAdd: () => void; onRemove: () => void; isExtra: boolean; disabledAdd?: boolean;
+  surcharge?: number;
 }) {
   if (count === 0) {
     return (
@@ -163,7 +184,10 @@ function CounterChip({ label, count, onAdd, onRemove, isExtra, disabledAdd }: {
                    bg-white text-slate-700 text-sm font-medium hover:border-brand-400 hover:bg-brand-50
                    transition-all w-full disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        <span className="truncate">{label}</span>
+        <span className="truncate">
+          {label}
+          {surcharge ? <span className="text-coral-600 font-semibold ml-1">+€{surcharge.toFixed(2)}</span> : null}
+        </span>
         <Plus className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
       </button>
     );
@@ -181,6 +205,7 @@ function CounterChip({ label, count, onAdd, onRemove, isExtra, disabledAdd }: {
       </button>
       <span className="flex-1 text-center text-white text-xs font-semibold truncate px-1">
         {label} <span className="opacity-75">×{count}</span>
+        {surcharge ? <span className="opacity-75 ml-1">+€{(surcharge * count).toFixed(2)}</span> : null}
       </span>
       <button
         onClick={onAdd}
@@ -205,10 +230,11 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
     mixIns?: string[];
     dressings?: string[];
     toppings?: string[];
+    mixInPrices?: Record<string, number>;
   } | null>(null);
 
   const [sel, setSel] = useState<Selections>({
-    size: null, base: null, protein: null,
+    size: null, base: null, protein: null, extraProtein: null,
     mixIns: {}, mixInsDone: false,
     dressing: {}, dressingDone: false,
     toppings: {}, toppingsDone: false,
@@ -259,8 +285,13 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
   const extraMixIns    = Math.max(0, totalMixIns  - mixInLimit);
   const extraToppings   = Math.max(0, totalToppings - 3);
   const extraDressings  = Math.max(0, totalDressings - 1);
-  
-  const currentPrice   = calcPrice(sel);
+
+  const mixInPrices    = bowlOptions?.mixInPrices ?? MIXIN_PRICES;
+  const premiumLines   = premiumMixIns(sel.mixIns, mixInPrices);
+  const hasExtras      = extraMixIns > 0 || extraToppings > 0 || extraDressings > 0
+                         || premiumLines.length > 0 || sel.extraProtein !== null;
+
+  const currentPrice   = calcPrice(sel, mixInPrices);
   const isSummary      = step === 7;
   const currentMeta    = STEPS[step - 1];
 
@@ -281,13 +312,15 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
   function handleAddToCart() {
     const price = currentPrice;
     const extras: string[] = [];
+    if (sel.extraProtein)   extras.push(`extra eiwit: ${sel.extraProtein}`);
+    for (const p of premiumLines) extras.push(`${p.item}${p.count > 1 ? ` ×${p.count}` : ''} (+€${p.total.toFixed(2)})`);
     if (extraMixIns > 0)    extras.push(`+${extraMixIns} extra mix-in${extraMixIns > 1 ? 's' : ''}`);
     if (extraToppings > 0)  extras.push(`+${extraToppings} extra topping${extraToppings > 1 ? 's' : ''}`);
     if (extraDressings > 0) extras.push(`+${extraDressings} extra saus`);
 
     const notes = [
       `Basis: ${sel.base}`,
-      `Eiwit: ${sel.protein}`,
+      `Eiwit: ${proteinLabel(sel)}`,
       `Mix-ins: ${formatCountMap(sel.mixIns)}`,
       `Dressing: ${formatCountMap(sel.dressing)}`,
       `Toppings: ${formatCountMap(sel.toppings)}`,
@@ -310,7 +343,7 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
 
   const progress = ((step - 1) / 6) * 100;
   const priceLabel = sel.size
-    ? `€${currentPrice.toFixed(2)}${extraMixIns > 0 || extraToppings > 0 || extraDressings > 0 ? ' (+extra)' : ''}`
+    ? `€${currentPrice.toFixed(2)}${hasExtras ? ' (+extra)' : ''}`
     : '';
 
   return (
@@ -346,7 +379,7 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
         </div>
         <div className="flex justify-between mt-1 text-xs text-slate-400">
           <span>{isSummary ? t('builder.done', language) : `${t('builder.step', language)} ${step} ${t('builder.of', language)} 6`}</span>
-          <span className={extraMixIns > 0 || extraToppings > 0 || extraDressings > 0 ? 'text-coral-600 font-semibold' : ''}>
+          <span className={hasExtras ? 'text-coral-600 font-semibold' : ''}>
             {priceLabel}
           </span>
         </div>
@@ -439,6 +472,35 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
             ))}
           </div>
 
+          {sel.protein && (
+            <div className="rounded-2xl border border-dashed border-slate-300 p-3 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-slate-700">
+                  {t('builder.steps.extraProtein', language)}
+                </span>
+                <span className="text-sm font-bold text-coral-600">+€{EXTRA_PROTEIN_PRICE.toFixed(2)}</span>
+              </div>
+              <p className="text-xs text-slate-400">{t('builder.steps.extraProteinDesc', language)}</p>
+              <div className="grid grid-cols-2 gap-2.5">
+                {(bowlOptions?.proteins || PROTEINS).map((pr) => (
+                  <button
+                    key={pr}
+                    onClick={() => setSel((p) => ({ ...p, extraProtein: p.extraProtein === pr ? null : pr }))}
+                    className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm
+                                font-medium transition-all duration-150 w-full ${
+                      sel.extraProtein === pr
+                        ? 'bg-coral-500 border-coral-500 text-white shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-700 hover:border-coral-400 hover:bg-coral-50'
+                    }`}
+                  >
+                    {sel.extraProtein === pr ? <Check className="w-3.5 h-3.5 flex-shrink-0" /> : <Plus className="w-3.5 h-3.5 flex-shrink-0" />}
+                    {pr}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Add custom protein */}
           {isAdmin && (
             selectedCategory === 'proteins' ? (
@@ -512,6 +574,7 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
               <CounterChip
                 key={m} label={m}
                 count={sel.mixIns[m] ?? 0}
+                surcharge={mixInPrices[m]}
                 isExtra={totalMixIns >= mixInLimit && (sel.mixIns[m] ?? 0) > 0
                            ? (sumMap(sel.mixIns) - (sel.mixIns[m] ?? 0)) >= mixInLimit
                            : false}
@@ -778,13 +841,25 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
 
       {isSummary && (
         <div className="space-y-4">
-          {(extraMixIns > 0 || extraToppings > 0 || extraDressings > 0) && (
+          {hasExtras && (
             <div className="bg-coral-50 border border-coral-200 rounded-2xl px-4 py-3 space-y-1">
               <p className="text-sm font-bold text-coral-700">{t('builder.summary.priceBreakdown', language)}</p>
               <div className="flex justify-between text-sm text-coral-700">
                 <span>{t('builder.summary.baseBowl', language)} ({sel.size})</span>
                 <span>€{(sel.size === 'Large' ? 13.5 : 11.0).toFixed(2)}</span>
               </div>
+              {sel.extraProtein && (
+                <div className="flex justify-between text-sm text-coral-700">
+                  <span>{t('builder.summary.extraProtein', language)} ({sel.extraProtein})</span>
+                  <span>+€{EXTRA_PROTEIN_PRICE.toFixed(2)}</span>
+                </div>
+              )}
+              {premiumLines.map((p) => (
+                <div key={p.item} className="flex justify-between text-sm text-coral-700">
+                  <span>{p.item}{p.count > 1 ? ` ×${p.count}` : ''}</span>
+                  <span>+€{p.total.toFixed(2)}</span>
+                </div>
+              ))}
               {extraMixIns > 0 && (
                 <div className="flex justify-between text-sm text-coral-700">
                   <span>{extraMixIns} {extraMixIns === 1 ? t('builder.summary.extraMixIn', language) : t('builder.summary.extraMixIns', language)}</span>
@@ -814,7 +889,7 @@ export default function BowlBuilder({ onAddToCart, onBack, isAdmin }: Props) {
             {([
               { label: t('builder.summary.size', language), value: `${sel.size} · €${sel.size === 'Large' ? '13.50' : '11.00'}`, targetStep: 1 },
               { label: t('builder.summary.base', language), value: sel.base!, targetStep: 2 },
-              { label: t('builder.summary.protein', language), value: sel.protein!, targetStep: 3 },
+              { label: t('builder.summary.protein', language), value: proteinLabel(sel), targetStep: 3 },
               { label: t('builder.summary.mixIns', language), value: formatCountMap(sel.mixIns), targetStep: 4 },
               { label: t('builder.summary.dressing', language), value: formatCountMap(sel.dressing), targetStep: 5 },
               { label: t('builder.summary.toppings', language), value: formatCountMap(sel.toppings), targetStep: 6 },

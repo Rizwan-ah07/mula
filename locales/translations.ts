@@ -111,6 +111,8 @@ export const translations = {
 
       proteinTitle: { nl: 'Kies uw eiwitten', en: 'Choose your protein', fr: 'Choisissez votre protéine' },
       proteinDesc: { nl: 'Kies uw eiwitbron', en: 'Choose your protein source', fr: 'Choisissez votre source de protéines' },
+      extraProtein: { nl: 'Extra eiwit', en: 'Extra protein', fr: 'Protéine supplémentaire' },
+      extraProteinDesc: { nl: 'Optioneel: hetzelfde (dubbel) of een ander eiwit erbij', en: 'Optional: the same (double) or a different protein', fr: 'Optionnel : la même (double) ou une autre protéine' },
 
       mixInsTitle: { nl: 'Kies uw mix-ins', en: 'Choose your mix-ins', fr: 'Choisissez vos mix-ins' },
       mixInsDesc: { nl: 'Kies mix-ins', en: 'Choose mix-ins', fr: 'Choisissez des mix-ins' },
@@ -134,6 +136,7 @@ export const translations = {
       extraMixIns: { nl: 'extra mix-ins', en: 'extra mix-ins', fr: 'mix-ins supplémentaires' },
       extraTopping: { nl: 'extra topping', en: 'extra topping', fr: 'garniture supplémentaire' },
       extraToppings: { nl: 'extra toppings', en: 'extra toppings', fr: 'garnitures supplémentaires' },
+      extraProtein: { nl: 'Extra eiwit', en: 'Extra protein', fr: 'Protéine supplémentaire' },
       total: { nl: 'Totaal', en: 'Total', fr: 'Total' },
 
       size: { nl: 'Maat', en: 'Size', fr: 'Taille' },
